@@ -1,0 +1,57 @@
+diff '--color=auto' -Naur a/cmake/LZMACodec.cmake b/cmake/LZMACodec.cmake
+--- a/cmake/LZMACodec.cmake	2024-10-29 00:57:03.000000000 +0100
++++ b/cmake/LZMACodec.cmake	2025-11-18 16:30:12.525180537 +0100
+@@ -26,7 +26,7 @@
+ 
+ # liblzma2
+ set(LZMA_SUPPORT FALSE)
+-find_package(liblzma)
++find_package(LibLZMA)
+ 
+ option(lzma "use liblzma (required for LZMA2 compression)" ${LIBLZMA_FOUND})
+ if (lzma AND LIBLZMA_FOUND)
+diff '--color=auto' -Naur a/cmake/TiffConfig.cmake.in b/cmake/TiffConfig.cmake.in
+--- a/cmake/TiffConfig.cmake.in	2024-10-29 00:57:03.000000000 +0100
++++ b/cmake/TiffConfig.cmake.in	2025-11-18 17:19:28.965933160 +0100
+@@ -1,5 +1,28 @@
+ if(NOT "@BUILD_SHARED_LIBS@")
+-    # TODO: import dependencies
++    if (@ZLIB_SUPPORT@)
++        find_dependency(ZLIB REQUIRED)
++    endif ()
++    if (@JPEG_SUPPORT@)
++        find_dependency(JPEG REQUIRED)
++    endif ()
++    if (@LZMA_SUPPORT@)
++        find_dependency(LibLZMA REQUIRED)
++    endif ()
++    if (@ZSTD_SUPPORT@)
++        find_dependency(zstd CONFIG REQUIRED)
++        add_library(ZSTD::ZSTD ALIAS zstd::libzstd)
++    endif ()
++
++    find_library(CMath_LIBRARY NAMES m)
++    if(CMath_LIBRARY AND NOT TARGET CMath::CMath)
++        if(CMath_LIBRARIES)
++            add_library(CMath::CMath UNKNOWN IMPORTED)
++            set_target_properties(CMath::CMath PROPERTIES
++                IMPORTED_LOCATION "${CMath_LIBRARY}")
++        else()
++            add_library(CMath::CMath INTERFACE IMPORTED)
++        endif()
++    endif()
+ endif()
+ 
+ function(set_variable_from_rel_or_absolute_path var root rel_or_abs_path)
+diff '--color=auto' -Naur a/libtiff/CMakeLists.txt b/libtiff/CMakeLists.txt
+--- a/libtiff/CMakeLists.txt	2025-06-12 15:02:11.000000000 +0200
++++ b/libtiff/CMakeLists.txt	2025-11-18 16:33:35.273195295 +0100
+@@ -168,7 +168,7 @@
+   endif()
+ endif()
+ if(LZMA_SUPPORT)
+-  target_link_libraries(tiff PRIVATE liblzma::liblzma)
++  target_link_libraries(tiff PRIVATE LibLZMA::LibLZMA)
+   string(APPEND tiff_requires_private " liblzma")
+ endif()
+ if(ZSTD_SUPPORT)
