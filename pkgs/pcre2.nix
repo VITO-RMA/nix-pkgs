@@ -1,13 +1,11 @@
 {
   lib,
   stdenv,
-  libpng,
-  zlib,
+  pcre2,
   static ? stdenv.hostPlatform.isStatic,
 }:
 
-libpng.overrideAttrs (old: {
-  buildInputs = old.buildInputs or [ ] ++ [ zlib ];
+pcre2.overrideAttrs (old: {
   doCheck = false;
 
   configureFlags =

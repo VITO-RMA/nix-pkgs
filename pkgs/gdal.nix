@@ -8,9 +8,14 @@
 
   useArmadillo ? (!useMinimalFeatures),
   useArrow ? (!useMinimalFeatures),
+  useCBlosc ? (!useMinimalFeatures), # needed for zarr support
+  useCurl ? (!useMinimalFeatures),
+  useCryptopp ? (!useMinimalFeatures),
   useHDF ? (!useMinimalFeatures),
+  useLibXml2 ? (!useMinimalFeatures),
   useNetCDF ? (!useMinimalFeatures),
   usePostgres ? (!useMinimalFeatures),
+  useQhull ? (!useMinimalFeatures),
   useTiledb ?
     (!useMinimalFeatures) && !(stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64),
 
@@ -18,10 +23,9 @@
   arrow-cpp,
   bison,
   c-blosc,
-  cmake,
-  crunch,
-  cryptopp,
   curl,
+  cmake,
+  cryptopp,
   expat,
   geos,
   hdf4,
@@ -69,15 +73,41 @@ stdenv.mkDerivation (finalAttrs: {
   cmakeFlags = [
     "-DGDAL_USE_INTERNAL_LIBS=OFF"
     "-DGEOTIFF_INCLUDE_DIR=${lib.getDev libgeotiff}/include"
-    "-DGEOTIFF_LIBRARY_RELEASE=${lib.getLib libgeotiff}/lib/libgeotiff${stdenv.hostPlatform.extensions.sharedLibrary}"
+    "-DGEOTIFF_LIBRARY_RELEASE=${lib.getLib libgeotiff}/lib/libgeotiff${
+      if static then
+        stdenv.hostPlatform.extensions.staticLibrary
+      else
+        stdenv.hostPlatform.extensions.sharedLibrary
+    }"
     "-DBUILD_DOCS=OFF"
     "-DBUILD_PYTHON_BINDINGS=OFF"
     "-DBUILD_JAVA_BINDINGS=OFF"
     "-DGDAL_BUILD_OPTIONAL_DRIVERS=OFF"
+    "-DOGR_BUILD_OPTIONAL_DRIVERS=OFF"
     "-DGDAL_USE_JPEG=OFF"
     "-DGDAL_USE_GIF=OFF"
+    "-DGDAL_USE_PNG=OFF"
+    "-DGDAL_USE_ZSTD=ON"
+    "-DZSTD_INCLUDE_DIRS=${lib.getDev zstd}/include"
+    "-DZSTD_LIBRARY_RELEASE=${lib.getLib zstd}/lib/libzstd${
+      if static then
+        stdenv.hostPlatform.extensions.staticLibrary
+      else
+        stdenv.hostPlatform.extensions.sharedLibrary
+    }"
+    "-DGDAL_USE_ZLIB=ON"
+    "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
+    "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${
+      if static then
+        stdenv.hostPlatform.extensions.staticLibrary
+      else
+        stdenv.hostPlatform.extensions.sharedLibrary
+    }"
+    "-DGDAL_USE_DEFLATE=ON"
     "-DGDAL_USE_SPATIALITE=OFF"
     "-DGDAL_ENABLE_DRIVER_AAIGRID=ON"
+    "-DGDAL_ENABLE_DRIVER_GTIFF=ON"
+    "-DGDAL_ENABLE_DRIVER_VRT=ON"
     "-DOGR_ENABLE_DRIVER_CSV=ON"
   ]
   ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
@@ -86,9 +116,15 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     "-DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=ON"
   ]
+  ++ (if useCurl then [ "-DGDAL_USE_CURL=ON" ] else [ "-DGDAL_USE_CURL=OFF" ])
+  ++ lib.optionals (!useCurl) [ "-DGDAL_USE_CURL=OFF" ]
   ++ lib.optionals (!useTiledb) [
     "-DGDAL_USE_TILEDB=OFF"
   ]
+  ++ (if useCBlosc then [ "-DGDAL_USE_BLOSC=ON" ] else [ "-DGDAL_USE_BLOSC=OFF" ])
+  ++ (if useCryptopp then [ "-DGDAL_USE_CRYPTOPP=ON" ] else [ "-DGDAL_USE_CRYPTOPP=OFF" ])
+  ++ (if useLibXml2 then [ "-DGDAL_USE_LIBXML2=ON" ] else [ "-DGDAL_USE_LIBXML2=OFF" ])
+  ++ (if useQhull then [ "-DGDAL_USE_QHULL=ON" ] else [ "-DGDAL_USE_QHULL=OFF" ])
   ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
 
   buildInputs =
@@ -96,12 +132,17 @@ stdenv.mkDerivation (finalAttrs: {
       tileDbDeps = lib.optionals useTiledb [ tiledb ];
       postgresDeps = lib.optionals usePostgres [ libpq ];
       arrowDeps = lib.optionals useArrow [ arrow-cpp ];
+      curlDeps = lib.optionals useCurl [ curl ];
       hdfDeps = lib.optionals useHDF [
         hdf4
         hdf5-cpp
       ];
       netCdfDeps = lib.optionals useNetCDF [ netcdf ];
       armadilloDeps = lib.optionals useArmadillo [ armadillo ];
+      libXml2Deps = lib.optionals useLibXml2 [ libxml2 ];
+      cryptoppDeps = lib.optionals useCryptopp [ cryptopp ];
+      qhullDeps = lib.optionals useQhull [ qhull ];
+      cbloscDeps = lib.optionals useCBlosc [ c-blosc ];
 
       darwinDeps = lib.optionals stdenv.hostPlatform.isDarwin [ libiconv ];
       nonDarwinDeps = lib.optionals (!stdenv.hostPlatform.isDarwin) [
@@ -109,37 +150,38 @@ stdenv.mkDerivation (finalAttrs: {
       ];
     in
     [
-      c-blosc
-      crunch
-      curl
-      cryptopp
-      libdeflate
       expat
       libgeotiff
       geos
       json_c
       lerc
       xz
-      libxml2
+      libdeflate
+      libpng
+      libtiff
       lz4
       openssl
       pcre2
-      libpng
       proj
-      qhull
       sqlite
-      libtiff
       zlib
       zstd
     ]
     ++ tileDbDeps
     ++ postgresDeps
     ++ arrowDeps
+    ++ curlDeps
     ++ hdfDeps
+    ++ libXml2Deps
+    ++ cbloscDeps
     ++ netCdfDeps
     ++ armadilloDeps
+    ++ cryptoppDeps
+    ++ qhullDeps
     ++ darwinDeps
     ++ nonDarwinDeps;
+
+  NIX_CFLAGS_LINK = if static then " -static-libgcc -static-libstdc++" else "";
 
   enableParallelBuilding = true;
   doInstallCheck = false;

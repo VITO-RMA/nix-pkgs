@@ -1,7 +1,9 @@
 {
   lib,
   stdenv,
+  lerc,
   libtiff,
+  libdeflate,
   zlib,
   xz,
   zstd,
@@ -15,6 +17,8 @@
 
     doCheck = false;
     buildInputs = (old.buildInputs or [ ]) ++ [
+      libdeflate
+      lerc
       zlib
       zstd
       xz
@@ -24,7 +28,7 @@
       ./patches/libtiff-static-targets.patch
     ];
 
-    outputs = builtins.filter (o: !(o == "doc" || o == "man")) (old.outputs or [ "out" ]);
+    outputs = builtins.filter (o: !(o == "doc" || o == "man" || o == "bin")) (old.outputs or [ "out" ]);
 
     cmakeFlags =
       (old.cmakeFlags or [ ])
@@ -32,6 +36,7 @@
         "-Dtiff-docs=OFF"
         "-Dtiff-contrib=OFF"
         "-Dtiff-tests=OFF"
+        "-Dtiff-tools=OFF"
         "-Djbig=OFF"
         "-Djpeg=OFF"
         "-Djpeg12=OFF"
@@ -42,6 +47,20 @@
         "-DZSTD_HAVE_DECOMPRESS_STREAM=ON"
         "-DHAVE_JPEGTURBO_DUAL_MODE_8_12=OFF"
         "-DBUILD_DOC=OFF"
+        "-DLERC_INCLUDE_DIRS=${lib.getDev lerc}/include"
+        "-DLERC_LIBRARY_RELEASE=${lib.getLib lerc}/lib/libLerc${
+          if static then
+            stdenv.hostPlatform.extensions.staticLibrary
+          else
+            stdenv.hostPlatform.extensions.sharedLibrary
+        }"
+        "-DZSTD_INCLUDE_DIRS=${lib.getDev zstd}/include"
+        "-DZSTD_LIBRARY_RELEASE=${lib.getLib zstd}/lib/libzstd${
+          if static then
+            stdenv.hostPlatform.extensions.staticLibrary
+          else
+            stdenv.hostPlatform.extensions.sharedLibrary
+        }"
       ]
       ++ lib.optionals static [
         "-DBUILD_SHARED_LIBS=OFF"

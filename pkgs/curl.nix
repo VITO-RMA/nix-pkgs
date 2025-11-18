@@ -1,14 +1,21 @@
 {
   lib,
   stdenv,
-  libpng,
+  curl,
+  openssl,
   zlib,
+  zstd,
   static ? stdenv.hostPlatform.isStatic,
 }:
 
-libpng.overrideAttrs (old: {
-  buildInputs = old.buildInputs or [ ] ++ [ zlib ];
-  doCheck = false;
+curl.overrideAttrs (old: {
+  buildInputs =
+    (old.buildInputs or [ ])
+    ++ lib.optionals static [
+      openssl
+      zlib
+      zstd
+    ];
 
   configureFlags =
     (old.configureFlags or [ ])

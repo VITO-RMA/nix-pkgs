@@ -13,15 +13,29 @@
         "aarch64-darwin"
       ];
 
+      # we prepend the packages with pkg to avoid rebuilding the world
+      # otherwise all the packages in the system that depend on one of these
+      # packages would need to be rebuilt to link against the static version
       customPackages = [
+        "pkg-cryptopp"
+        "pkg-curl"
         "pkg-fmt"
+        "pkg-curl"
+        "pkg-expat"
         "pkg-gdal"
+        "pkg-geos"
         "pkg-indicators"
+        "pkg-json_c"
+        "pkg-libdeflate"
         "pkg-libgeotiff"
         "pkg-libjpeg"
         "pkg-libpng"
         "pkg-libtiff"
+        "pkg-lerc"
         "pkg-lyra"
+        "pkg-lz4"
+        "pkg-openssl"
+        "pkg-pcre2"
         "pkg-proj"
         "pkg-spdlog"
         "pkg-sqlite"
@@ -35,20 +49,72 @@
         static:
 
         (final: prev: {
+          pkg-cryptopp = final.callPackage ./pkgs/cryptopp.nix {
+            inherit (prev) cryptopp;
+            inherit static;
+          };
+
+          pkg-curl = final.callPackage ./pkgs/curl.nix {
+            inherit (prev) curl;
+            inherit static;
+            openssl = final.pkg-openssl;
+            zlib = final.pkg-zlib-compat;
+            zstd = final.pkg-zstd;
+          };
+
+          pkg-expat = final.callPackage ./pkgs/expat.nix {
+            inherit static;
+          };
+
           pkg-fmt = final.callPackage ./pkgs/fmt.nix {
             inherit static;
           };
 
           pkg-gdal = final.callPackage ./pkgs/gdal.nix {
             inherit static;
+            curl = final.pkg-curl;
+            cryptopp = final.pkg-cryptopp;
+            c-blosc = final.c-blosc; # not overridden here yet
+            geos = final.pkg-geos;
+            expat = final.pkg-expat;
+            json_c = final.pkg-json_c;
+            lerc = final.pkg-lerc;
+            libdeflate = final.pkg-libdeflate;
             libpng = final.pkg-libpng;
             libtiff = final.pkg-libtiff;
+            libgeotiff = final.pkg-libgeotiff;
+            lz4 = final.pkg-lz4;
+            openssl = final.pkg-openssl;
+            pcre2 = final.pkg-pcre2;
+            proj = final.pkg-proj;
+            sqlite = final.pkg-sqlite;
             zlib = final.pkg-zlib-compat;
             xz = final.pkg-xz;
             zstd = final.pkg-zstd;
           };
 
+          pkg-geos = final.callPackage ./pkgs/geos.nix {
+            inherit (prev) geos;
+            inherit static;
+          };
+
           pkg-indicators = final.callPackage ./pkgs/indicators.nix {
+            inherit static;
+          };
+
+          pkg-json_c = final.callPackage ./pkgs/json_c.nix {
+            inherit (prev) json_c;
+            inherit static;
+          };
+
+          pkg-libdeflate = final.callPackage ./pkgs/libdeflate.nix {
+            inherit (prev) libdeflate;
+            inherit static;
+            zlib = final.pkg-zlib-compat;
+          };
+
+          pkg-libexpat = final.callPackage ./pkgs/libexpat.nix {
+            inherit (prev) expat;
             inherit static;
           };
 
@@ -72,12 +138,34 @@
           pkg-libtiff = final.callPackage ./pkgs/libtiff.nix {
             inherit (prev) libtiff;
             inherit static;
+            libdeflate = final.pkg-libdeflate;
             zlib = final.pkg-zlib-compat;
             xz = final.pkg-xz;
             zstd = final.pkg-zstd;
           };
 
+          pkg-lerc = final.callPackage ./pkgs/lerc.nix {
+            inherit (prev) lerc;
+            inherit static;
+          };
+
           pkg-lyra = final.callPackage ./pkgs/lyra.nix {
+            inherit static;
+          };
+
+          pkg-lz4 = final.callPackage ./pkgs/lz4.nix {
+            inherit (prev) lz4;
+            inherit static;
+          };
+
+          pkg-openssl = final.callPackage ./pkgs/openssl.nix {
+            inherit (prev) openssl;
+            inherit static;
+            zlib = final.pkg-zlib-compat;
+          };
+
+          pkg-pcre2 = final.callPackage ./pkgs/pcre2.nix {
+            inherit (prev) pcre2;
             inherit static;
           };
 
@@ -112,7 +200,6 @@
           };
 
           pkg-zstd = final.callPackage ./pkgs/zstd.nix {
-            inherit (prev) zstd;
             inherit static;
           };
         });
@@ -160,13 +247,14 @@
         map (system: {
           name = system;
           value =
+            # builtins.listToAttrs (
+            #   map (pkgName: {
+            #     name = pkgName;
+            #     value = self.packages.${system}.${pkgName};
+            #   }) customPackages
+            # )
+            # //
             builtins.listToAttrs (
-              map (pkgName: {
-                name = pkgName;
-                value = self.packages.${system}.${pkgName};
-              }) customPackages
-            )
-            // builtins.listToAttrs (
               map (pkgName: {
                 name = "${pkgName}-static";
                 value = self.packages.${system}."${pkgName}-static";
