@@ -138,6 +138,7 @@
           pkg-libtiff = final.callPackage ./pkgs/libtiff.nix {
             inherit (prev) libtiff;
             inherit static;
+            lerc = final.pkg-lerc;
             libdeflate = final.pkg-libdeflate;
             zlib = final.pkg-zlib-compat;
             xz = final.pkg-xz;
@@ -247,14 +248,13 @@
         map (system: {
           name = system;
           value =
-            # builtins.listToAttrs (
-            #   map (pkgName: {
-            #     name = pkgName;
-            #     value = self.packages.${system}.${pkgName};
-            #   }) customPackages
-            # )
-            # //
             builtins.listToAttrs (
+              map (pkgName: {
+                name = pkgName;
+                value = self.packages.${system}.${pkgName};
+              }) customPackages
+            )
+            // builtins.listToAttrs (
               map (pkgName: {
                 name = "${pkgName}-static";
                 value = self.packages.${system}."${pkgName}-static";

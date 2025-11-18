@@ -12,8 +12,8 @@ diff '--color=auto' -Naur a/cmake/LZMACodec.cmake b/cmake/LZMACodec.cmake
  if (lzma AND LIBLZMA_FOUND)
 diff '--color=auto' -Naur a/cmake/TiffConfig.cmake.in b/cmake/TiffConfig.cmake.in
 --- a/cmake/TiffConfig.cmake.in	2024-10-29 00:57:03.000000000 +0100
-+++ b/cmake/TiffConfig.cmake.in	2025-11-18 17:19:28.965933160 +0100
-@@ -1,5 +1,28 @@
++++ b/cmake/TiffConfig.cmake.in	2025-11-18 23:19:26.431429303 +0100
+@@ -1,5 +1,30 @@
  if(NOT "@BUILD_SHARED_LIBS@")
 -    # TODO: import dependencies
 +    if (@ZLIB_SUPPORT@)
@@ -27,6 +27,8 @@ diff '--color=auto' -Naur a/cmake/TiffConfig.cmake.in b/cmake/TiffConfig.cmake.i
 +    endif ()
 +    if (@ZSTD_SUPPORT@)
 +        find_dependency(zstd CONFIG REQUIRED)
++        get_target_property(ZSTD_LIBS     zstd::libzstd INTERFACE_LINK_LIBRARIES)
++        message(STATUS "zstd link libs: ${ZSTD_LIBS}")
 +        add_library(ZSTD::ZSTD ALIAS zstd::libzstd)
 +    endif ()
 +

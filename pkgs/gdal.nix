@@ -55,13 +55,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "gdal" + lib.optionalString useMinimalFeatures "-minimal";
-  version = "3.11.4";
+  version = "3.12.0";
 
   src = fetchFromGitHub {
     owner = "OSGeo";
     repo = "gdal";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-CFQF3vDhhXsAnIfUcn6oTQ4Xm+GH/36dqSGc0HvyEJ0=";
+    hash = "sha256-al7nDmUbKNP4kBMVBLWUUxn0QSAbYAJ1XhZWAVFk+sA=";
   };
 
   nativeBuildInputs = [
@@ -88,8 +88,10 @@ stdenv.mkDerivation (finalAttrs: {
     "-DGDAL_USE_GIF=OFF"
     "-DGDAL_USE_PNG=OFF"
     "-DGDAL_USE_ZSTD=ON"
-    "-DZSTD_INCLUDE_DIRS=${lib.getDev zstd}/include"
-    "-DZSTD_LIBRARY_RELEASE=${lib.getLib zstd}/lib/libzstd${
+    # Both shouldn't be needed, but it depends on the order of findmodule calls
+    "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
+    "-DZSTD_INCLUDE_DIR=${lib.getDev zstd}/include"
+    "-DZSTD_LIBRARY=${lib.getLib zstd}/lib/libzstd${
       if static then
         stdenv.hostPlatform.extensions.staticLibrary
       else
@@ -104,11 +106,16 @@ stdenv.mkDerivation (finalAttrs: {
         stdenv.hostPlatform.extensions.sharedLibrary
     }"
     "-DGDAL_USE_DEFLATE=ON"
+    "-DGDAL_USE_ARCHIVE=OFF"
     "-DGDAL_USE_SPATIALITE=OFF"
     "-DGDAL_ENABLE_DRIVER_AAIGRID=ON"
     "-DGDAL_ENABLE_DRIVER_GTIFF=ON"
     "-DGDAL_ENABLE_DRIVER_VRT=ON"
     "-DOGR_ENABLE_DRIVER_CSV=ON"
+  ]
+  ++ lib.optionals static [
+    # rely on our specified lib paths to avoid picking up shared libs
+    "-DCMAKE_DISABLE_FIND_PACKAGE_ZSTD=ON"
   ]
   ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
     "-DCMAKE_SKIP_BUILD_RPATH=ON" # without, libgdal.so can't find libmariadb.so
