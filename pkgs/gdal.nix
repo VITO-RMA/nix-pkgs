@@ -189,6 +189,8 @@ stdenv.mkDerivation (finalAttrs: {
     ++ darwinDeps
     ++ nonDarwinDeps;
 
+  propagatedBuildInputs = finalAttrs.buildInputs;
+
   NIX_CFLAGS_LINK = if static && stdenv.cc.isGNU then " -static-libgcc -static-libstdc++" else "";
 
   enableParallelBuilding = true;
