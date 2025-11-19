@@ -5,8 +5,10 @@
   fetchFromGitHub,
   cmake,
   libtiff,
+  lerc,
   proj,
   zlib,
+  zstd,
   static ? stdenv.hostPlatform.isStatic,
 }:
 
@@ -21,6 +23,10 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-oiuooLejCRI1DFTjhgYoePtKS+OAGnW6OBzgITcY500=";
   };
 
+  patches = [
+    ./patches/libgeotiff-find-tiff.patch
+  ];
+
   sourceRoot = "source/libgeotiff";
 
   nativeBuildInputs = [
@@ -29,8 +35,10 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     libtiff
+    lerc
     proj
     zlib
+    zstd
   ];
 
   cmakeFlags = [
@@ -40,6 +48,25 @@ stdenv.mkDerivation rec {
     "-DWITH_ZLIB=ON"
     "-DWITH_TIFF=ON"
     "-DWITH_JPEG=OFF"
+    # Set these hard coded to avoid config errors with static builds
+    "-DHAVE_TIFF=1"
+    "-DHAVE_TIFFOPEN=1"
+    "-DHAVE_TIFFMERGEFIELDINFO=1"
+    "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
+    "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${
+      if static then
+        stdenv.hostPlatform.extensions.staticLibrary
+      else
+        stdenv.hostPlatform.extensions.sharedLibrary
+    }"
+    "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
+    "-DZSTD_INCLUDE_DIR=${lib.getDev zstd}/include"
+    "-DZSTD_LIBRARY=${lib.getLib zstd}/lib/libzstd${
+      if static then
+        stdenv.hostPlatform.extensions.staticLibrary
+      else
+        stdenv.hostPlatform.extensions.sharedLibrary
+    }"
   ]
   ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
 

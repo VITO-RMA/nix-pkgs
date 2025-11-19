@@ -12,12 +12,48 @@ diff '--color=auto' -Naur a/cmake/LZMACodec.cmake b/cmake/LZMACodec.cmake
  if (lzma AND LIBLZMA_FOUND)
 diff '--color=auto' -Naur a/cmake/TiffConfig.cmake.in b/cmake/TiffConfig.cmake.in
 --- a/cmake/TiffConfig.cmake.in	2024-10-29 00:57:03.000000000 +0100
-+++ b/cmake/TiffConfig.cmake.in	2025-11-18 23:19:26.431429303 +0100
-@@ -1,5 +1,30 @@
++++ b/cmake/TiffConfig.cmake.in	2025-11-19 09:21:21.142664740 +0100
+@@ -1,5 +1,66 @@
  if(NOT "@BUILD_SHARED_LIBS@")
 -    # TODO: import dependencies
 +    if (@ZLIB_SUPPORT@)
 +        find_dependency(ZLIB REQUIRED)
++
++        find_path(Deflate_INCLUDE_DIR NAMES libdeflate.h PATH_SUFFIXES include)
++        find_library(Deflate_LIBRARY_RELEASE NAMES deflate deflatestatic PATH_SUFFIXES lib)
++
++        message(STATUS "Tiff deflate support: ${Deflate_LIBRARY_RELEASE}")
++
++        if(Deflate_LIBRARY_RELEASE AND NOT TARGET Deflate::Deflate)
++            add_library(Deflate::Deflate STATIC IMPORTED)
++            set_target_properties(Deflate::Deflate PROPERTIES
++                    INTERFACE_INCLUDE_DIRECTORIES "${Deflate_INCLUDE_DIRS}")
++
++            if(Deflate_LIBRARY_RELEASE)
++                set_property(TARGET Deflate::Deflate APPEND PROPERTY
++                        IMPORTED_CONFIGURATIONS RELEASE)
++                set_target_properties(Deflate::Deflate PROPERTIES
++                        IMPORTED_LOCATION_RELEASE "${Deflate_LIBRARY_RELEASE}")
++            endif()
++        endif()
++
++        find_path(Lerc_INCLUDE_DIR NAMES Lerc_c_api.h PATH_SUFFIXES include)
++        find_library(Lerc_LIBRARY_RELEASE NAMES LercLib Lerc PATH_SUFFIXES lib)
++
++        message(STATUS "Tiff lerc support: ${Lerc_LIBRARY_RELEASE}")
++
++        if(Lerc_LIBRARY_RELEASE AND NOT TARGET LERC::LERC)
++            add_library(LERC::LERC STATIC IMPORTED)
++            set_target_properties(LERC::LERC PROPERTIES
++                    INTERFACE_INCLUDE_DIRECTORIES "${Lerc_INCLUDE_DIRS}")
++
++            if(Lerc_LIBRARY_RELEASE)
++                set_property(TARGET LERC::LERC APPEND PROPERTY
++                        IMPORTED_CONFIGURATIONS RELEASE)
++                set_target_properties(LERC::LERC PROPERTIES
++                        IMPORTED_LOCATION_RELEASE "${Lerc_LIBRARY_RELEASE}")
++            endif()
++        endif()
 +    endif ()
 +    if (@JPEG_SUPPORT@)
 +        find_dependency(JPEG REQUIRED)

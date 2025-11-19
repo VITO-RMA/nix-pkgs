@@ -1,0 +1,28 @@
+diff '--color=auto' -Naur a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt	2025-02-18 15:14:47.000000000 +0100
++++ b/CMakeLists.txt	2025-11-19 08:50:28.088943660 +0100
+@@ -235,12 +235,9 @@
+ 
+ 
+ IF(WITH_TIFF)
+-    FIND_PACKAGE(TIFF NO_MODULE QUIET)
+-    if (NOT TIFF_FOUND)
+-      FIND_PACKAGE(TIFF REQUIRED)
+-    endif ()
+-
+-    IF(TIFF_FOUND)
++    FIND_PACKAGE(Tiff CONFIG REQUIRED)
++    
++    IF(Tiff_FOUND)
+         # Confirm required API is available
+         INCLUDE(CheckFunctionExists)
+         SET(CMAKE_REQUIRED_LIBRARIES ${TIFF_LIBRARIES})
+@@ -259,7 +256,7 @@
+ 
+         TARGET_INCLUDE_DIRECTORIES(${GEOTIFF_LIBRARY_TARGET} PRIVATE ${TIFF_INCLUDE_DIR})
+         TARGET_COMPILE_DEFINITIONS(${GEOTIFF_LIBRARY_TARGET} PRIVATE -DHAVE_TIFF=1)
+-    ENDIF(TIFF_FOUND)
++    ENDIF(Tiff_FOUND)
+ ENDIF(WITH_TIFF)
+ 
+ IF(WITH_ZLIB)

@@ -121,8 +121,10 @@
           pkg-libgeotiff = final.callPackage ./pkgs/libgeotiff.nix {
             inherit static;
             libtiff = final.pkg-libtiff;
+            lerc = final.pkg-lerc;
             proj = final.pkg-proj;
             zlib = final.pkg-zlib-compat;
+            zstd = final.pkg-zstd;
           };
 
           pkg-libjpeg = final.callPackage ./pkgs/libjpeg.nix {
