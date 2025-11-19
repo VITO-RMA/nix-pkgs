@@ -21,6 +21,10 @@ stdenv.mkDerivation rec {
     hash = "sha256-1FUJLsnx0ZNTT66sK7/gbZVo6Se85nbYvtEyoxeOHTI=";
   };
 
+  patchPhase = ''
+    rm -rfv third_party/minizip
+  '';
+
   nativeBuildInputs = [
     cmake
     pkg-config
