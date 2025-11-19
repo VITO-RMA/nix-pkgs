@@ -32,9 +32,11 @@
         "pkg-libjpeg"
         "pkg-libpng"
         "pkg-libtiff"
+        "pkg-libxlsxwriter"
         "pkg-lerc"
         "pkg-lyra"
         "pkg-lz4"
+        "pkg-minizip"
         "pkg-openssl"
         "pkg-pcre2"
         "pkg-proj"
@@ -154,6 +156,13 @@
             zstd = final.pkg-zstd;
           };
 
+          pkg-libxlsxwriter = final.callPackage ./pkgs/libxlsxwriter.nix {
+            inherit (prev) libxlsxwriter;
+            inherit static;
+            zlib = final.pkg-zlib-compat;
+            minizip = final.pkg-minizip;
+          };
+
           pkg-lerc = final.callPackage ./pkgs/lerc.nix {
             inherit (prev) lerc;
             inherit static;
@@ -166,6 +175,12 @@
           pkg-lz4 = final.callPackage ./pkgs/lz4.nix {
             inherit (prev) lz4;
             inherit static;
+          };
+
+          pkg-minizip = final.callPackage ./pkgs/minizip.nix {
+            inherit (prev) minizip;
+            inherit static;
+            zlib = final.pkg-zlib-compat;
           };
 
           pkg-openssl = final.callPackage ./pkgs/openssl.nix {

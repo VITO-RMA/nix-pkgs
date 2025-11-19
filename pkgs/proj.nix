@@ -39,6 +39,8 @@ stdenv.mkDerivation (finalAttrs: {
     sqlite
   ];
 
+  propagatedBuildInputs = finalAttrs.buildInputs;
+
   cmakeFlags = [
     "-DJSON_Diagnostics=OFF"
     "-DEXE_SQLITE3=${buildPackages.sqlite}/bin/sqlite3"
