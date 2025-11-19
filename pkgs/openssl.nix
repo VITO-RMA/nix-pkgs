@@ -10,7 +10,7 @@
   static = static;
 }).overrideAttrs
   (old: {
-    buildInputs = old.buildInputs ++ lib.optionals static [ zlib ];
+    buildInputs = [ zlib ];
     doCheck = false;
 
     configureFlags =

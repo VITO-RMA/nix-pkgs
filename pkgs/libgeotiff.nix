@@ -41,6 +41,8 @@ stdenv.mkDerivation rec {
     zstd
   ];
 
+  propagatedBuildInputs = buildInputs;
+
   cmakeFlags = [
     "-DBUILD_MAN=OFF"
     "-DBUILD_DOC=OFF"
@@ -61,7 +63,7 @@ stdenv.mkDerivation rec {
     }"
     "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
   ]
-  ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
+  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
 
   meta = with lib; {
     description = "Library implementing attempt to create a tiff based interchange format for georeferenced raster imagery";

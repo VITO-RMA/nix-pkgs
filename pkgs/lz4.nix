@@ -1,4 +1,5 @@
 {
+  lib,
   stdenv,
   lz4,
   static ? stdenv.hostPlatform.isStatic,
@@ -12,5 +13,5 @@
     cmakeFlags =
       old.cmakeFlags or [ ]
       ++ [ "-DLZ4_BUILD_CLI=OFF" ]
-      ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
+      ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
   })

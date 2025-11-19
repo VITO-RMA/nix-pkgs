@@ -124,16 +124,13 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     "-DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=ON"
   ]
-  ++ (if useCurl then [ "-DGDAL_USE_CURL=ON" ] else [ "-DGDAL_USE_CURL=OFF" ])
-  ++ lib.optionals (!useCurl) [ "-DGDAL_USE_CURL=OFF" ]
-  ++ lib.optionals (!useTiledb) [
-    "-DGDAL_USE_TILEDB=OFF"
-  ]
-  ++ (if useCBlosc then [ "-DGDAL_USE_BLOSC=ON" ] else [ "-DGDAL_USE_BLOSC=OFF" ])
-  ++ (if useCryptopp then [ "-DGDAL_USE_CRYPTOPP=ON" ] else [ "-DGDAL_USE_CRYPTOPP=OFF" ])
-  ++ (if useLibXml2 then [ "-DGDAL_USE_LIBXML2=ON" ] else [ "-DGDAL_USE_LIBXML2=OFF" ])
-  ++ (if useQhull then [ "-DGDAL_USE_QHULL=ON" ] else [ "-DGDAL_USE_QHULL=OFF" ])
-  ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
+  ++ [ (lib.cmakeBool "GDAL_USE_CURL" useCurl) ]
+  ++ [ (lib.cmakeBool "GDAL_USE_TILEDB" useTiledb) ]
+  ++ [ (lib.cmakeBool "GDAL_USE_BLOSC" useCBlosc) ]
+  ++ [ (lib.cmakeBool "GDAL_USE_CRYPTOPP" useCryptopp) ]
+  ++ [ (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2) ]
+  ++ [ (lib.cmakeBool "GDAL_USE_QHULL" useQhull) ]
+  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
 
   buildInputs =
     let

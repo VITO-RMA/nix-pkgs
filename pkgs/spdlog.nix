@@ -12,5 +12,7 @@
   (old: {
     doCheck = false;
 
-    buildInputs = old.buildInputs ++ lib.optionals static [ fmt ];
+    buildInputs = [ fmt ];
+
+    cmakeFlags = old.cmakeFlags or [ ] ++ [ (lib.cmakeBool "SPDLOG_BUILD_TESTS" false) ];
   })

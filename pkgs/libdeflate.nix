@@ -10,7 +10,7 @@
 }).overrideAttrs
   (old: {
     doCheck = false;
-    buildInputs = old.buildInputs or [ ] ++ [ zlib ];
+    buildInputs = [ zlib ];
 
-    cmakeFlags = old.cmakeFlags or [ ] ++ lib.optionals static [ "-DLIBDEFLATE_BUILD_SHARED_LIB=OFF" ];
+    cmakeFlags = old.cmakeFlags or [ ] ++ [ (lib.cmakeBool "LIBDEFLATE_BUILD_SHARED_LIB" (!static)) ];
   })

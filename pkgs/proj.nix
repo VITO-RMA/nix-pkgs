@@ -48,7 +48,7 @@ stdenv.mkDerivation (finalAttrs: {
     "-DENABLE_TIFF=OFF"
     "-DBUILD_APPS=OFF"
   ]
-  ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
+  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
 
   CXXFLAGS = [
     # GCC 13: error: 'int64_t' in namespace 'std' does not name a type

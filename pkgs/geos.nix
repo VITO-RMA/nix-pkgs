@@ -1,4 +1,5 @@
 {
+  lib,
   stdenv,
   geos,
   static ? stdenv.hostPlatform.isStatic,
@@ -9,7 +10,5 @@
   (old: {
     doCheck = false;
 
-    cmakeFlags =
-      old.cmakeFlags or [ ]
-      ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
+    cmakeFlags = old.cmakeFlags or [ ] ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
   })

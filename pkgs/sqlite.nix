@@ -7,7 +7,7 @@
 }:
 
 sqlite.overrideAttrs (old: {
-  buildInputs = old.buildInputs ++ lib.optionals static [ zlib ];
+  buildInputs = [ zlib ];
 
   configureFlags =
     (old.configureFlags or [ ])

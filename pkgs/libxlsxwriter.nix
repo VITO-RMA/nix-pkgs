@@ -1,4 +1,5 @@
 {
+  lib,
   stdenv,
   libxlsxwriter,
   minizip,
@@ -6,13 +7,13 @@
   static ? stdenv.hostPlatform.isStatic,
 }:
 
-(libxlsxwriter.override {
-}).overrideAttrs
-  (old: {
-    doCheck = false;
+(libxlsxwriter.override { }).overrideAttrs (old: {
+  doCheck = false;
 
-    cmakeFlags =
-      old.cmakeFlags or [ ]
-      ++ [ "-DLZ4_BUILD_CLI=OFF" ]
-      ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
-  })
+  buildInputs = [
+    minizip
+    zlib
+  ];
+
+  cmakeFlags = old.cmakeFlags or [ ] ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+})

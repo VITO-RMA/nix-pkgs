@@ -15,6 +15,6 @@
     cmakeFlags =
       (old.cmakeFlags or [ ])
       ++ lib.optionals static [
-        "-DBUILD_SHARED_LIBS=OFF"
+        (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
       ];
   })

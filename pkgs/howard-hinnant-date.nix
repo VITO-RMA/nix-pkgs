@@ -1,4 +1,5 @@
 {
+  lib,
   stdenv,
   howard-hinnant-date,
   static ? stdenv.hostPlatform.isStatic,
@@ -13,5 +14,5 @@
       "-DBUILD_TZ_LIB=ON"
       "-DUSE_SYSTEM_TZ_DB=ON"
     ]
-    ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
+    ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
   })

@@ -7,7 +7,7 @@
 }:
 
 minizip.overrideAttrs (old: {
-  buildInputs = old.buildInputs or [ ] ++ [ zlib ];
+  buildInputs = [ zlib ];
   doCheck = false;
 
   configureFlags =

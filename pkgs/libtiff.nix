@@ -16,12 +16,12 @@
     dontDisableStatic = static;
 
     doCheck = false;
-    buildInputs = (old.buildInputs or [ ]) ++ [
-      libdeflate
+    buildInputs = [
       lerc
+      libdeflate
       zlib
-      zstd
       xz
+      zstd
     ];
 
     patches = old.patches ++ [
@@ -63,7 +63,5 @@
             stdenv.hostPlatform.extensions.sharedLibrary
         }"
       ]
-      ++ lib.optionals static [
-        "-DBUILD_SHARED_LIBS=OFF"
-      ];
+      ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
   })

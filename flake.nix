@@ -2,6 +2,7 @@
   description = "Reusable static overrides for various libraries";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+  inputs.nixpkgsunstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs =
     { self, nixpkgs, ... }@inputs:
@@ -37,6 +38,7 @@
         "pkg-lyra"
         "pkg-lz4"
         "pkg-minizip"
+        "pkg-onetbb"
         "pkg-openssl"
         "pkg-pcre2"
         "pkg-proj"
@@ -66,13 +68,9 @@
             zstd = final.pkg-zstd;
           };
 
-          pkg-expat = final.callPackage ./pkgs/expat.nix {
-            inherit static;
-          };
+          pkg-expat = final.callPackage ./pkgs/expat.nix { inherit static; };
 
-          pkg-fmt = final.callPackage ./pkgs/fmt.nix {
-            inherit static;
-          };
+          pkg-fmt = final.callPackage ./pkgs/fmt.nix { inherit static; };
 
           pkg-gdal = final.callPackage ./pkgs/gdal.nix {
             inherit static;
@@ -106,9 +104,11 @@
             inherit static;
           };
 
-          pkg-indicators = final.callPackage ./pkgs/indicators.nix {
+          pkg-hwloc = final.callPackage ./pkgs/hwloc.nix {
             inherit static;
           };
+
+          pkg-indicators = final.callPackage ./pkgs/indicators.nix { inherit static; };
 
           pkg-json_c = final.callPackage ./pkgs/json_c.nix {
             inherit (prev) json_c;
@@ -168,9 +168,7 @@
             inherit static;
           };
 
-          pkg-lyra = final.callPackage ./pkgs/lyra.nix {
-            inherit static;
-          };
+          pkg-lyra = final.callPackage ./pkgs/lyra.nix { inherit static; };
 
           pkg-lz4 = final.callPackage ./pkgs/lz4.nix {
             inherit (prev) lz4;
@@ -181,6 +179,12 @@
             inherit (prev) minizip;
             inherit static;
             zlib = final.pkg-zlib-compat;
+          };
+
+          pkg-onetbb = final.callPackage ./pkgs/onetbb.nix {
+            onetbb = (import inputs.nixpkgsunstable { system = prev.system; }).onetbb;
+            inherit static;
+            hwloc = final.pkg-hwloc;
           };
 
           pkg-openssl = final.callPackage ./pkgs/openssl.nix {
@@ -210,13 +214,9 @@
             zlib = final.pkg-zlib-compat;
           };
 
-          pkg-type_safe = final.callPackage ./pkgs/type_safe.nix {
-            inherit static;
-          };
+          pkg-type_safe = final.callPackage ./pkgs/type_safe.nix { inherit static; };
 
-          pkg-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix {
-            inherit static;
-          };
+          pkg-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix { inherit static; };
 
           pkg-zlib-compat = final.callPackage ./pkgs/zlib-ng.nix {
             inherit static;
@@ -228,9 +228,7 @@
             inherit static;
           };
 
-          pkg-zstd = final.callPackage ./pkgs/zstd.nix {
-            inherit static;
-          };
+          pkg-zstd = final.callPackage ./pkgs/zstd.nix { inherit static; };
         });
 
       supportedSystems = [
@@ -243,12 +241,7 @@
       forEachSupportedSystem =
         f:
         inputs.nixpkgs.lib.genAttrs supportedSystems (
-          system:
-          f {
-            pkgs = import inputs.nixpkgs {
-              inherit system;
-            };
-          }
+          system: f { pkgs = import inputs.nixpkgs { inherit system; }; }
         );
 
       # Build a package set for one system (dynamic or static)
@@ -323,6 +316,8 @@
                 packages =
                   with pkgs;
                   [
+                    nil
+                    nixfmt-rfc-style
                   ]
                   ++ (if pkgs.system == "aarch64-darwin" then [ ] else [ gdb ]);
               };

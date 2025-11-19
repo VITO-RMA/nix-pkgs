@@ -24,7 +24,7 @@ stdenv.mkDerivation rec {
 
   cmakeFlags = [
   ]
-  ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
+  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
 
   meta = with lib; {
     homepage = "https://github.com/bfgroup/Lyra";

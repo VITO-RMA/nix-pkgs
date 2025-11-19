@@ -34,18 +34,10 @@ stdenv.mkDerivation rec {
     "-DZSTD_MULTITHREAD_SUPPORT=1"
     "-DZSTD_BUILD_PROGRAMS=OFF"
   ]
-  ++ (
-    if static then
-      [
-        "-DZSTD_BUILD_SHARED=OFF"
-        "-DZSTD_BUILD_STATIC=ON"
-      ]
-    else
-      [
-        "-DZSTD_BUILD_SHARED=ON"
-        "-DZSTD_BUILD_STATIC=OFF"
-      ]
-  );
+  ++ [
+    (lib.cmakeBool "ZSTD_BUILD_SHARED" (!static))
+    (lib.cmakeBool "ZSTD_BUILD_STATIC" (static))
+  ];
 
   meta = with lib; {
     description = "Zstandard real-time compression algorithm";

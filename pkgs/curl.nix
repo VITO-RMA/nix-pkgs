@@ -9,13 +9,11 @@
 }:
 
 curl.overrideAttrs (old: {
-  buildInputs =
-    (old.buildInputs or [ ])
-    ++ lib.optionals static [
-      openssl
-      zlib
-      zstd
-    ];
+  buildInputs = (old.buildInputs or [ ]) ++ [
+    openssl
+    zlib
+    zstd
+  ];
 
   configureFlags =
     (old.configureFlags or [ ])
