@@ -4,7 +4,7 @@
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
 
   outputs =
-    { self, nixpkgs, ... }:
+    { self, nixpkgs, ... }@inputs:
     let
       systems = [
         "x86_64-linux"
@@ -208,6 +208,24 @@
           };
         });
 
+      supportedSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "x86_64-darwin"
+        "aarch64-darwin"
+      ];
+
+      forEachSupportedSystem =
+        f:
+        inputs.nixpkgs.lib.genAttrs supportedSystems (
+          system:
+          f {
+            pkgs = import inputs.nixpkgs {
+              inherit system;
+            };
+          }
+        );
+
       # Build a package set for one system (dynamic or static)
       mkPkgs =
         system: static:
@@ -264,6 +282,29 @@
               }) customPackages
             );
         }) systems
+      );
+
+      devShells = forEachSupportedSystem (
+        { pkgs, ... }:
+        {
+          default =
+            pkgs.mkShell.override
+              {
+                # Override stdenv in order to change compiler:
+                # stdenv = pkgs.clangStdenv;
+              }
+              {
+                name = "dev";
+                packages =
+                  with pkgs;
+                  [
+                    # development tools
+                    # cmake
+                    #ninja
+                  ]
+                  ++ (if pkgs.system == "aarch64-darwin" then [ ] else [ gdb ]);
+              };
+        }
       );
     };
 }
