@@ -18,6 +18,7 @@
   useQhull ? (!useMinimalFeatures),
   useTiledb ?
     (!useMinimalFeatures) && !(stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64),
+  buildTools ? (!useMinimalFeatures),
 
   armadillo,
   arrow-cpp,
@@ -130,6 +131,7 @@ stdenv.mkDerivation (finalAttrs: {
   ++ [ (lib.cmakeBool "GDAL_USE_CRYPTOPP" useCryptopp) ]
   ++ [ (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2) ]
   ++ [ (lib.cmakeBool "GDAL_USE_QHULL" useQhull) ]
+  ++ [ (lib.cmakeBool "BUILD_APPS" (buildTools)) ]
   ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
 
   buildInputs =

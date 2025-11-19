@@ -12,6 +12,7 @@
   (old: {
     buildInputs = [ zlib ];
     doCheck = false;
+    withDocs = false;
 
     configureFlags =
       (old.configureFlags or [ ])
