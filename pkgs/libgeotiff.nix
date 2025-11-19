@@ -60,13 +60,6 @@ stdenv.mkDerivation rec {
         stdenv.hostPlatform.extensions.sharedLibrary
     }"
     "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
-    "-DZSTD_INCLUDE_DIR=${lib.getDev zstd}/include"
-    "-DZSTD_LIBRARY=${lib.getLib zstd}/lib/libzstd${
-      if static then
-        stdenv.hostPlatform.extensions.staticLibrary
-      else
-        stdenv.hostPlatform.extensions.sharedLibrary
-    }"
   ]
   ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
 

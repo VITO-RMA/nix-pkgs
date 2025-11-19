@@ -81,6 +81,33 @@ diff '--color=auto' -Naur a/cmake/TiffConfig.cmake.in b/cmake/TiffConfig.cmake.i
  endif()
  
  function(set_variable_from_rel_or_absolute_path var root rel_or_abs_path)
+diff '--color=auto' -Naur a/cmake/ZSTDCodec.cmake b/cmake/ZSTDCodec.cmake
+--- a/cmake/ZSTDCodec.cmake	2024-10-29 00:57:03.000000000 +0100
++++ b/cmake/ZSTDCodec.cmake	2025-11-19 10:32:27.754283836 +0100
+@@ -28,17 +28,13 @@
+ set(ZSTD_SUPPORT FALSE)
+ set(ZSTD_USABLE FALSE)
+ 
+-find_package(ZSTD)
+-
+-if(ZSTD_FOUND)
+-    if(TARGET zstd::libzstd_shared)
+-        add_library(ZSTD::ZSTD ALIAS zstd::libzstd_shared)
+-        set(ZSTD_HAVE_DECOMPRESS_STREAM ON)
+-    elseif(TARGET zstd::libzstd_static)
+-        add_library(ZSTD::ZSTD ALIAS zstd::libzstd_static)
+-        set(ZSTD_HAVE_DECOMPRESS_STREAM ON)
+-    endif()
++find_package(zstd CONFIG)
+ 
++if(zstd_FOUND)
++    add_library(ZSTD::ZSTD ALIAS zstd::libzstd)
++    set(ZSTD_HAVE_DECOMPRESS_STREAM ON)
++    set(ZSTD_RECENT_ENOUGH TRUE)
++    
+     if(NOT DEFINED ZSTD_HAVE_DECOMPRESS_STREAM)
+       set(CMAKE_REQUIRED_INCLUDES_SAVE ${CMAKE_REQUIRED_INCLUDES})
+       set(CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES} ${ZSTD_INCLUDE_DIRS})
 diff '--color=auto' -Naur a/libtiff/CMakeLists.txt b/libtiff/CMakeLists.txt
 --- a/libtiff/CMakeLists.txt	2025-06-12 15:02:11.000000000 +0200
 +++ b/libtiff/CMakeLists.txt	2025-11-18 16:33:35.273195295 +0100

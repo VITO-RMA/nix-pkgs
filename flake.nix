@@ -298,9 +298,6 @@
                 packages =
                   with pkgs;
                   [
-                    # development tools
-                    # cmake
-                    #ninja
                   ]
                   ++ (if pkgs.system == "aarch64-darwin" then [ ] else [ gdb ]);
               };
