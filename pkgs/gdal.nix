@@ -55,13 +55,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "gdal" + lib.optionalString useMinimalFeatures "-minimal";
-  version = "3.12.0";
+  #version = "3.12.0";
+  version = "3.11.4";
 
   src = fetchFromGitHub {
     owner = "OSGeo";
     repo = "gdal";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-al7nDmUbKNP4kBMVBLWUUxn0QSAbYAJ1XhZWAVFk+sA=";
+    hash = "sha256-CFQF3vDhhXsAnIfUcn6oTQ4Xm+GH/36dqSGc0HvyEJ0=";
   };
 
   nativeBuildInputs = [
