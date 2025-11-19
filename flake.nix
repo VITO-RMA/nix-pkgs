@@ -39,6 +39,7 @@
         "pkg-proj"
         "pkg-spdlog"
         "pkg-sqlite"
+        "pkg-tomlplusplus"
         "pkg-type_safe"
         "pkg-zlib-compat"
         "pkg-zstd"
@@ -190,6 +191,10 @@
           };
 
           pkg-type_safe = final.callPackage ./pkgs/type_safe.nix {
+            inherit static;
+          };
+
+          pkg-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix {
             inherit static;
           };
 
