@@ -122,6 +122,7 @@
             inherit static;
             libtiff = final.pkg-libtiff;
             proj = final.pkg-proj;
+            zlib = final.pkg-zlib-compat;
           };
 
           pkg-libjpeg = final.callPackage ./pkgs/libjpeg.nix {

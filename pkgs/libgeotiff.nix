@@ -37,13 +37,9 @@ stdenv.mkDerivation rec {
     "-DBUILD_MAN=OFF"
     "-DBUILD_DOC=OFF"
     "-DWITH_UTILITIES=OFF"
-    "-DWITH_ZLIB=OFF"
-    "-DWITH_TIFF=OFF"
+    "-DWITH_ZLIB=ON"
+    "-DWITH_TIFF=ON"
     "-DWITH_JPEG=OFF"
-    #
-    "-DHAVE_TIFF=1"
-    "-DHAVE_TIFFOPEN=1"
-    "-DHAVE_TIFFMERGEFIELDINFO=1"
   ]
   ++ (if static then [ "-DBUILD_SHARED_LIBS=OFF" ] else [ "-DBUILD_SHARED_LIBS=ON" ]);
 
