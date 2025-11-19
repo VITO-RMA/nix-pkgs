@@ -46,6 +46,7 @@
         "pkg-sqlite"
         "pkg-tomlplusplus"
         "pkg-type_safe"
+        "pkg-vc"
         "pkg-zlib-compat"
         "pkg-zstd"
         "pkg-xz"
@@ -56,21 +57,23 @@
 
         (final: prev: {
           pkg-cryptopp = final.callPackage ./pkgs/cryptopp.nix {
-            inherit (prev) cryptopp;
             inherit static;
           };
 
           pkg-curl = final.callPackage ./pkgs/curl.nix {
-            inherit (prev) curl;
             inherit static;
             openssl = final.pkg-openssl;
             zlib = final.pkg-zlib-compat;
             zstd = final.pkg-zstd;
           };
 
-          pkg-expat = final.callPackage ./pkgs/expat.nix { inherit static; };
+          pkg-expat = final.callPackage ./pkgs/expat.nix {
+            inherit static;
+          };
 
-          pkg-fmt = final.callPackage ./pkgs/fmt.nix { inherit static; };
+          pkg-fmt = final.callPackage ./pkgs/fmt.nix {
+            inherit static;
+          };
 
           pkg-gdal = final.callPackage ./pkgs/gdal.nix {
             inherit static;
@@ -96,7 +99,6 @@
           };
 
           pkg-geos = final.callPackage ./pkgs/geos.nix {
-            inherit (prev) geos;
             inherit static;
           };
 
@@ -111,18 +113,15 @@
           pkg-indicators = final.callPackage ./pkgs/indicators.nix { inherit static; };
 
           pkg-json_c = final.callPackage ./pkgs/json_c.nix {
-            inherit (prev) json_c;
             inherit static;
           };
 
           pkg-libdeflate = final.callPackage ./pkgs/libdeflate.nix {
-            inherit (prev) libdeflate;
             inherit static;
             zlib = final.pkg-zlib-compat;
           };
 
           pkg-libexpat = final.callPackage ./pkgs/libexpat.nix {
-            inherit (prev) expat;
             inherit static;
           };
 
@@ -136,18 +135,15 @@
           };
 
           pkg-libjpeg = final.callPackage ./pkgs/libjpeg.nix {
-            inherit (prev) libjpeg;
             inherit static;
           };
 
           pkg-libpng = final.callPackage ./pkgs/libpng.nix {
-            inherit (prev) libpng;
             inherit static;
             zlib = final.pkg-zlib-compat;
           };
 
           pkg-libtiff = final.callPackage ./pkgs/libtiff.nix {
-            inherit (prev) libtiff;
             inherit static;
             lerc = final.pkg-lerc;
             libdeflate = final.pkg-libdeflate;
@@ -157,26 +153,22 @@
           };
 
           pkg-libxlsxwriter = final.callPackage ./pkgs/libxlsxwriter.nix {
-            inherit (prev) libxlsxwriter;
             inherit static;
             zlib = final.pkg-zlib-compat;
             minizip = final.pkg-minizip;
           };
 
           pkg-lerc = final.callPackage ./pkgs/lerc.nix {
-            inherit (prev) lerc;
             inherit static;
           };
 
           pkg-lyra = final.callPackage ./pkgs/lyra.nix { inherit static; };
 
           pkg-lz4 = final.callPackage ./pkgs/lz4.nix {
-            inherit (prev) lz4;
             inherit static;
           };
 
           pkg-minizip = final.callPackage ./pkgs/minizip.nix {
-            inherit (prev) minizip;
             inherit static;
             zlib = final.pkg-zlib-compat;
           };
@@ -188,13 +180,11 @@
           };
 
           pkg-openssl = final.callPackage ./pkgs/openssl.nix {
-            inherit (prev) openssl;
             inherit static;
             zlib = final.pkg-zlib-compat;
           };
 
           pkg-pcre2 = final.callPackage ./pkgs/pcre2.nix {
-            inherit (prev) pcre2;
             inherit static;
           };
 
@@ -209,14 +199,21 @@
           };
 
           pkg-sqlite = final.callPackage ./pkgs/sqlite.nix {
-            inherit (prev) sqlite;
             inherit static;
             zlib = final.pkg-zlib-compat;
           };
 
-          pkg-type_safe = final.callPackage ./pkgs/type_safe.nix { inherit static; };
+          pkg-type_safe = final.callPackage ./pkgs/type_safe.nix {
+            inherit static;
+          };
 
-          pkg-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix { inherit static; };
+          pkg-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix {
+            inherit static;
+          };
+
+          pkg-vc = final.callPackage ./pkgs/vc.nix {
+            inherit static;
+          };
 
           pkg-zlib-compat = final.callPackage ./pkgs/zlib-ng.nix {
             inherit static;
@@ -224,7 +221,6 @@
           };
 
           pkg-xz = final.callPackage ./pkgs/xz.nix {
-            inherit (prev) xz;
             inherit static;
           };
 
