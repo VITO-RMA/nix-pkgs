@@ -19,10 +19,6 @@ stdenv.mkDerivation rec {
     hash = "sha256-tNFWIT9ydfozB8dWcmTMuZLCQmQudTFJIkSr0aG7S44=";
   };
 
-  patches = [
-    ./patches/zstd-no-static-suffix.patch
-  ];
-
   # no longer needed in the next release
   sourceRoot = "source/build/cmake";
 
