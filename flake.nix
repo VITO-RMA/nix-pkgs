@@ -23,6 +23,7 @@
         "pkg-curl"
         "pkg-expat"
         "pkg-gdal"
+        "pkg-howard-hinnant-date"
         "pkg-geos"
         "pkg-indicators"
         "pkg-json_c"
@@ -96,6 +97,10 @@
 
           pkg-geos = final.callPackage ./pkgs/geos.nix {
             inherit (prev) geos;
+            inherit static;
+          };
+
+          pkg-howard-hinnant-date = final.callPackage ./pkgs/howard-hinnant-date.nix {
             inherit static;
           };
 
