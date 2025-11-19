@@ -9,7 +9,7 @@
 }:
 
 curl.overrideAttrs (old: {
-  buildInputs = (old.buildInputs or [ ]) ++ [
+  buildInputs = [
     openssl
     zlib
     zstd
