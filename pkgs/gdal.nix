@@ -54,6 +54,10 @@
   zstd,
 }:
 
+let
+  exts = stdenv.hostPlatform.extensions or {};
+  ext = if static then (exts.staticLibrary or ".a") else (exts.sharedLibrary or ".so");
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "gdal" + lib.optionalString useMinimalFeatures "-minimal";
   #version = "3.12.0";
@@ -75,12 +79,7 @@ stdenv.mkDerivation (finalAttrs: {
   cmakeFlags = [
     "-DGDAL_USE_INTERNAL_LIBS=OFF"
     "-DGEOTIFF_INCLUDE_DIR=${lib.getDev libgeotiff}/include"
-    "-DGEOTIFF_LIBRARY_RELEASE=${lib.getLib libgeotiff}/lib/libgeotiff${
-      if static then
-        stdenv.hostPlatform.extensions.staticLibrary
-      else
-        stdenv.hostPlatform.extensions.sharedLibrary
-    }"
+    "-DGEOTIFF_LIBRARY_RELEASE=${lib.getLib libgeotiff}/lib/libgeotiff${ext}"
     "-DBUILD_DOCS=OFF"
     "-DBUILD_PYTHON_BINDINGS=OFF"
     "-DBUILD_JAVA_BINDINGS=OFF"
@@ -93,20 +92,10 @@ stdenv.mkDerivation (finalAttrs: {
     # Both shouldn't be needed, but it depends on the order of findmodule calls
     "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
     "-DZSTD_INCLUDE_DIR=${lib.getDev zstd}/include"
-    "-DZSTD_LIBRARY=${lib.getLib zstd}/lib/libzstd${
-      if static then
-        stdenv.hostPlatform.extensions.staticLibrary
-      else
-        stdenv.hostPlatform.extensions.sharedLibrary
-    }"
+    "-DZSTD_LIBRARY=${lib.getLib zstd}/lib/libzstd${ext}"
     "-DGDAL_USE_ZLIB=ON"
     "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
-    "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${
-      if static then
-        stdenv.hostPlatform.extensions.staticLibrary
-      else
-        stdenv.hostPlatform.extensions.sharedLibrary
-    }"
+    "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${ext}"
     "-DGDAL_USE_DEFLATE=ON"
     "-DGDAL_USE_ARCHIVE=OFF"
     "-DGDAL_USE_SPATIALITE=OFF"

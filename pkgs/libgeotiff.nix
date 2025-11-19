@@ -12,6 +12,10 @@
   static ? stdenv.hostPlatform.isStatic,
 }:
 
+let
+  exts = stdenv.hostPlatform.extensions or {};
+  ext = if static then (exts.staticLibrary or ".a") else (exts.sharedLibrary or ".so");
+in
 stdenv.mkDerivation rec {
   pname = "libgeotiff";
   version = "1.7.4";
@@ -55,12 +59,7 @@ stdenv.mkDerivation rec {
     "-DHAVE_TIFFOPEN=1"
     "-DHAVE_TIFFMERGEFIELDINFO=1"
     "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
-    "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${
-      if static then
-        stdenv.hostPlatform.extensions.staticLibrary
-      else
-        stdenv.hostPlatform.extensions.sharedLibrary
-    }"
+    "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${ext}"
     "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
   ]
   ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
