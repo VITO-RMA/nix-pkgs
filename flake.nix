@@ -2,7 +2,6 @@
   description = "Reusable static overrides for various libraries";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
-  inputs.nixpkgsunstable.url = "github:NixOS/nixpkgs/nixos-unstable";
 
   outputs =
     { self, nixpkgs, ... }@inputs:
@@ -174,7 +173,6 @@
           };
 
           pkg-onetbb = final.callPackage ./pkgs/onetbb.nix {
-            onetbb = (import inputs.nixpkgsunstable { system = prev.system; }).onetbb;
             inherit static;
             hwloc = final.pkg-hwloc;
           };
