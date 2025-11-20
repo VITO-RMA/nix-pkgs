@@ -57,7 +57,7 @@
 
 let
   exts = stdenv.hostPlatform.extensions or { };
-  ext = if static then (exts.staticLibrary or ".a") else (exts.sharedLibrary or ".so");
+  ext = if static then (".a") else (exts.sharedLibrary or ".so");
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = mkPackageName ("gdal" + lib.optionalString useMinimalFeatures "-minimal") static stdenv;
@@ -96,7 +96,9 @@ stdenv.mkDerivation (finalAttrs: {
     "-DZSTD_LIBRARY=${lib.getLib zstd}/lib/libzstd${ext}"
     "-DGDAL_USE_ZLIB=ON"
     "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
-    "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${ext}"
+    "-DZLIB_LIBRARY_RELEASE=${lib.getLib zlib}/lib/libz${ext}"
+    "-DDeflate_INCLUDE_DIR=${lib.getLib libdeflate}/include"
+    "-DDeflate_LIBRARY_RELEASE=${lib.getLib libdeflate}/lib/libdeflate${ext}"
     "-DGDAL_USE_DEFLATE=ON"
     "-DGDAL_USE_ARCHIVE=OFF"
     "-DGDAL_USE_SPATIALITE=OFF"
