@@ -6,10 +6,12 @@
   pkg-config,
   numactl,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
-  pname = "hwloc";
+  pname = mkPackageName "hwloc" static stdenv;
+
   version = "2.12.2";
 
   src = fetchFromGitHub {

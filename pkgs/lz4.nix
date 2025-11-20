@@ -3,11 +3,13 @@
   stdenv,
   lz4,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 (lz4.override {
 }).overrideAttrs
   (old: {
+    pname = mkPackageName old.pname static stdenv;
     doCheck = false;
 
     cmakeFlags =

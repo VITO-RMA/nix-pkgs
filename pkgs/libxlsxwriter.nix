@@ -8,10 +8,11 @@
   zlib,
   openssl ? null,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 stdenv.mkDerivation rec {
-  pname = "libxlsxwriter";
+  pname = mkPackageName "libxlsxwriter" static stdenv;
   version = "1.2.3";
 
   src = fetchFromGitHub {

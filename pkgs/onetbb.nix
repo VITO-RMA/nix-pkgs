@@ -8,10 +8,11 @@
   ninja,
   pkg-config,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
-  pname = "onetbb";
+  pname = mkPackageName "onetbb" static stdenv;
   version = "2022.3.0";
 
   outputs = [

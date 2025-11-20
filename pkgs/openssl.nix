@@ -4,12 +4,14 @@
   openssl,
   zlib,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 (openssl.override {
   static = static;
 }).overrideAttrs
   (old: {
+    pname = mkPackageName old.pname static stdenv;
     buildInputs = [ zlib ];
     doCheck = false;
     withDocs = false;

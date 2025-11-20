@@ -4,11 +4,13 @@
   libdeflate,
   zlib,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 (libdeflate.override {
 }).overrideAttrs
   (old: {
+    pname = mkPackageName old.pname static stdenv;
     doCheck = false;
     buildInputs = [ zlib ];
 

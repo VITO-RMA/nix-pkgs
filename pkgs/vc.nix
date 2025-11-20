@@ -3,11 +3,13 @@
   stdenv,
   vc,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 (vc.override {
 }).overrideAttrs
   (old: {
+    pname = mkPackageName old.pname static stdenv;
     doCheck = false;
 
     cmakeFlags =

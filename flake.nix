@@ -51,31 +51,39 @@
         "pkg-xz"
       ];
 
+      mkPackageName =
+        pkg: static: stdenv:
+        let
+          clib = if stdenv.hostPlatform.isStatic then "musl" else "glibc";
+          suffix = if static then "-static" else "";
+        in
+        "${pkg}-mod${suffix}-${clib}";
+
       mkOverlay =
         static:
 
         (final: prev: {
           pkg-cryptopp = final.callPackage ./pkgs/cryptopp.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-curl = final.callPackage ./pkgs/curl.nix {
-            inherit static;
+            inherit static mkPackageName;
             openssl = final.pkg-openssl;
             zlib = final.pkg-zlib-compat;
             zstd = final.pkg-zstd;
           };
 
           pkg-expat = final.callPackage ./pkgs/expat.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-fmt = final.callPackage ./pkgs/fmt.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-gdal = final.callPackage ./pkgs/gdal.nix {
-            inherit static;
+            inherit static mkPackageName;
             curl = final.pkg-curl;
             cryptopp = final.pkg-cryptopp;
             c-blosc = final.c-blosc; # not overridden here yet
@@ -98,34 +106,36 @@
           };
 
           pkg-geos = final.callPackage ./pkgs/geos.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-howard-hinnant-date = final.callPackage ./pkgs/howard-hinnant-date.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-hwloc = final.callPackage ./pkgs/hwloc.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
-          pkg-indicators = final.callPackage ./pkgs/indicators.nix { inherit static; };
+          pkg-indicators = final.callPackage ./pkgs/indicators.nix {
+            inherit static mkPackageName;
+          };
 
           pkg-json_c = final.callPackage ./pkgs/json_c.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-libdeflate = final.callPackage ./pkgs/libdeflate.nix {
-            inherit static;
+            inherit static mkPackageName;
             zlib = final.pkg-zlib-compat;
           };
 
           pkg-libexpat = final.callPackage ./pkgs/libexpat.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-libgeotiff = final.callPackage ./pkgs/libgeotiff.nix {
-            inherit static;
+            inherit static mkPackageName;
             libtiff = final.pkg-libtiff;
             lerc = final.pkg-lerc;
             proj = final.pkg-proj;
@@ -134,16 +144,16 @@
           };
 
           pkg-libjpeg = final.callPackage ./pkgs/libjpeg.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-libpng = final.callPackage ./pkgs/libpng.nix {
-            inherit static;
+            inherit static mkPackageName;
             zlib = final.pkg-zlib-compat;
           };
 
           pkg-libtiff = final.callPackage ./pkgs/libtiff.nix {
-            inherit static;
+            inherit static mkPackageName;
             lerc = final.pkg-lerc;
             libdeflate = final.pkg-libdeflate;
             zlib = final.pkg-zlib-compat;
@@ -152,77 +162,81 @@
           };
 
           pkg-libxlsxwriter = final.callPackage ./pkgs/libxlsxwriter.nix {
-            inherit static;
+            inherit static mkPackageName;
             zlib = final.pkg-zlib-compat;
             minizip = final.pkg-minizip;
           };
 
           pkg-lerc = final.callPackage ./pkgs/lerc.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
-          pkg-lyra = final.callPackage ./pkgs/lyra.nix { inherit static; };
+          pkg-lyra = final.callPackage ./pkgs/lyra.nix {
+            inherit static mkPackageName;
+          };
 
           pkg-lz4 = final.callPackage ./pkgs/lz4.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-minizip = final.callPackage ./pkgs/minizip.nix {
-            inherit static;
+            inherit static mkPackageName;
             zlib = final.pkg-zlib-compat;
           };
 
           pkg-onetbb = final.callPackage ./pkgs/onetbb.nix {
-            inherit static;
+            inherit static mkPackageName;
             hwloc = final.pkg-hwloc;
           };
 
           pkg-openssl = final.callPackage ./pkgs/openssl.nix {
-            inherit static;
+            inherit static mkPackageName;
             zlib = final.pkg-zlib-compat;
           };
 
           pkg-pcre2 = final.callPackage ./pkgs/pcre2.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-proj = final.callPackage ./pkgs/proj.nix {
-            inherit static;
+            inherit static mkPackageName;
             sqlite = final.pkg-sqlite;
           };
 
           pkg-spdlog = final.callPackage ./pkgs/spdlog.nix {
-            inherit static;
+            inherit static mkPackageName;
             fmt = final.pkg-fmt;
           };
 
           pkg-sqlite = final.callPackage ./pkgs/sqlite.nix {
-            inherit static;
+            inherit static mkPackageName;
             zlib = final.pkg-zlib-compat;
           };
 
           pkg-type_safe = final.callPackage ./pkgs/type_safe.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-vc = final.callPackage ./pkgs/vc.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
           pkg-zlib-compat = final.callPackage ./pkgs/zlib-ng.nix {
-            inherit static;
+            inherit static mkPackageName;
             withZlibCompat = true;
           };
 
           pkg-xz = final.callPackage ./pkgs/xz.nix {
-            inherit static;
+            inherit static mkPackageName;
           };
 
-          pkg-zstd = final.callPackage ./pkgs/zstd.nix { inherit static; };
+          pkg-zstd = final.callPackage ./pkgs/zstd.nix {
+            inherit static mkPackageName;
+          };
         });
 
       supportedSystems = [

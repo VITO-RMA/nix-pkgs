@@ -4,12 +4,14 @@
   spdlog,
   fmt,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 (spdlog.override {
   staticBuild = static;
 }).overrideAttrs
   (old: {
+    pname = mkPackageName old.pname static stdenv;
     doCheck = false;
 
     buildInputs = [ fmt ];

@@ -3,11 +3,13 @@
   stdenv,
   howard-hinnant-date,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 (howard-hinnant-date.override {
 }).overrideAttrs
   (old: {
+    pname = mkPackageName old.pname static stdenv;
     doCheck = false;
 
     cmakeFlags = [

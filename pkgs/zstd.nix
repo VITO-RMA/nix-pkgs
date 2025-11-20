@@ -6,10 +6,11 @@
   fixDarwinDylibNames,
   cmake,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 stdenv.mkDerivation rec {
-  pname = "zstd";
+  pname = mkPackageName "zstd" static stdenv;
   version = "1.5.7";
 
   src = fetchFromGitHub {

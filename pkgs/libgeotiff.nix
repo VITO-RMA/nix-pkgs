@@ -10,14 +10,15 @@
   zlib,
   zstd,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 let
-  exts = stdenv.hostPlatform.extensions or {};
+  exts = stdenv.hostPlatform.extensions or { };
   ext = if static then (exts.staticLibrary or ".a") else (exts.sharedLibrary or ".so");
 in
 stdenv.mkDerivation rec {
-  pname = "libgeotiff";
+  pname = mkPackageName "libgeotiff" static stdenv;
   version = "1.7.4";
 
   src = fetchFromGitHub {

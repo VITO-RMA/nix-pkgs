@@ -4,10 +4,11 @@
   fetchFromGitHub,
   cmake,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 stdenv.mkDerivation rec {
-  pname = "type_safe";
+  pname = mkPackageName "type_safe" static stdenv;
   version = "v0.2.4";
 
   src = fetchFromGitHub {

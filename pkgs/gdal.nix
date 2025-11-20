@@ -5,6 +5,7 @@
 
   useMinimalFeatures ? true,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 
   useArmadillo ? (!useMinimalFeatures),
   useArrow ? (!useMinimalFeatures),
@@ -55,11 +56,11 @@
 }:
 
 let
-  exts = stdenv.hostPlatform.extensions or {};
+  exts = stdenv.hostPlatform.extensions or { };
   ext = if static then (exts.staticLibrary or ".a") else (exts.sharedLibrary or ".so");
 in
 stdenv.mkDerivation (finalAttrs: {
-  pname = "gdal" + lib.optionalString useMinimalFeatures "-minimal";
+  pname = mkPackageName ("gdal" + lib.optionalString useMinimalFeatures "-minimal") static stdenv;
   #version = "3.12.0";
   version = "3.11.4";
 

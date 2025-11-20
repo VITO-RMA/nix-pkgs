@@ -4,9 +4,11 @@
   libpng,
   zlib,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 libpng.overrideAttrs (old: {
+  pname = mkPackageName old.pname static stdenv;
   buildInputs = [ zlib ];
   doCheck = false;
 

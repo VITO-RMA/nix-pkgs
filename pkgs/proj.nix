@@ -8,10 +8,11 @@
   sqlite,
   testers,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
-  pname = "proj";
+  pname = mkPackageName "proj" static stdenv;
   version = "9.7.0";
 
   src = fetchFromGitHub {

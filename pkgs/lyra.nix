@@ -5,10 +5,11 @@
   fetchFromGitHub,
   cmake,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 stdenv.mkDerivation rec {
-  pname = "lyra";
+  pname = mkPackageName "lyra" static stdenv;
   version = "1.7.0";
 
   src = fetchFromGitHub {

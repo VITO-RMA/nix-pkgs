@@ -8,15 +8,17 @@
   xz,
   zstd,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 let
-  exts = stdenv.hostPlatform.extensions or {};
+  exts = stdenv.hostPlatform.extensions or { };
   ext = if static then (exts.staticLibrary or ".a") else (exts.sharedLibrary or ".so");
 in
 (libtiff.override {
 }).overrideAttrs
   (old: {
+    pname = mkPackageName old.pname static stdenv;
     dontDisableStatic = static;
 
     doCheck = false;

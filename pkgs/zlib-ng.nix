@@ -4,12 +4,14 @@
   zlib-ng,
   static ? stdenv.hostPlatform.isStatic,
   withZlibCompat ? false,
+  mkPackageName,
 }:
 
 (zlib-ng.override {
   withZlibCompat = withZlibCompat;
 }).overrideAttrs
   (old: {
+    pname = mkPackageName old.pname static stdenv;
     dontDisableStatic = static;
 
     cmakeFlags =

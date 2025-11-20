@@ -4,9 +4,11 @@
   minizip,
   zlib,
   static ? stdenv.hostPlatform.isStatic,
+  mkPackageName,
 }:
 
 minizip.overrideAttrs (old: {
+  pname = mkPackageName old.pname static stdenv;
   buildInputs = [ zlib ];
   doCheck = false;
 
