@@ -11,4 +11,5 @@
   (old: {
     pname = mkPackageName old.pname static stdenv;
     doCheck = false;
+    mingwSupport = false;
   })

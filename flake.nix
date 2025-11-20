@@ -19,9 +19,8 @@
       customPackages = [
         "pkg-cryptopp"
         "pkg-curl"
-        "pkg-fmt"
-        "pkg-curl"
         "pkg-expat"
+        "pkg-fmt"
         "pkg-gdal"
         "pkg-howard-hinnant-date"
         "pkg-geos"
@@ -54,10 +53,16 @@
       mkPackageName =
         pkg: static: stdenv:
         let
-          clib = if stdenv.hostPlatform.isStatic then "musl" else "glibc";
+          clib =
+            if stdenv.hostPlatform.config or "" == "x86_64-w64-mingw32" then
+              ""
+            else if stdenv.hostPlatform.isStatic then
+              "-musl"
+            else
+              "-glibc";
           suffix = if static then "-static" else "";
         in
-        "${pkg}-mod${suffix}-${clib}";
+        "${pkg}-mod${suffix}${clib}";
 
       mkOverlay =
         static:
@@ -254,10 +259,47 @@
 
       # Build a package set for one system (dynamic or static)
       mkPkgs =
-        system: static:
+        system: static: isMingw:
+        let
+          # Get the package set from the mkOverlay
+          overlayPkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [ (mkOverlay static) ];
+          };
+        in
         import nixpkgs {
           inherit system;
           overlays = [ (mkOverlay static) ];
+          # fully static toolchain (not the packages only)
+          static = isMingw;
+          config = {
+            allowUnsupportedSystem = isMingw;
+          };
+
+          stdenv =
+            prevStdenv:
+            if isMingw && prevStdenv.cc.isGNU && prevStdenv.targetPlatform.isWindows then
+              let
+                gccWin32 = overlayPkgs.wrapCC (
+                  overlayPkgs.gcc-unwrapped.override {
+                    threadsCross = {
+                      model = "win32";
+                      package = null;
+                    };
+                  }
+                );
+              in
+              prevStdenv.overrideCC gccWin32
+            else
+              prevStdenv;
+
+          crossSystem =
+            if isMingw then
+              {
+                config = "x86_64-w64-mingw32";
+              }
+            else
+              null;
         };
     in
     {
@@ -273,8 +315,19 @@
           name = system;
           value =
             let
-              pkgsDynamic = mkPkgs system false;
-              pkgsStatic = mkPkgs system true;
+              pkgsDynamic = mkPkgs system false false;
+              pkgsStatic = mkPkgs system true false;
+              pkgsMingw = mkPkgs system true true;
+
+              # Filter custom packages for MinGW based on their mingwSupport attribute
+              supportedMingwPackages = inputs.nixpkgs.lib.filter (
+                pkgName:
+                let
+                  pkg = pkgsMingw.${pkgName};
+                in
+                if pkg ? mingwSupport then pkg.mingwSupport else true
+              ) customPackages;
+
             in
             builtins.listToAttrs (
               map (pkgName: {
@@ -287,6 +340,12 @@
                 name = "${pkgName}-static";
                 value = pkgsStatic.${pkgName};
               }) customPackages
+            )
+            // builtins.listToAttrs (
+              map (pkgName: {
+                name = "${pkgName}-win-static";
+                value = pkgsMingw.${pkgName};
+              }) supportedMingwPackages
             );
         }) systems
       );
@@ -295,18 +354,38 @@
         map (system: {
           name = system;
           value =
-            builtins.listToAttrs (
-              map (pkgName: {
-                name = pkgName;
-                value = self.packages.${system}.${pkgName};
-              }) customPackages
-            )
-            // builtins.listToAttrs (
-              map (pkgName: {
-                name = "${pkgName}-static";
-                value = self.packages.${system}."${pkgName}-static";
-              }) customPackages
-            );
+            let
+              pkgsForSystem = self.packages.${system};
+
+              # Existing checks (dynamic + static)
+              baseChecks =
+                builtins.listToAttrs (
+                  map (pkgName: {
+                    name = pkgName;
+                    value = pkgsForSystem.${pkgName};
+                  }) customPackages
+                )
+                // builtins.listToAttrs (
+                  map (pkgName: {
+                    name = "${pkgName}-static";
+                    value = pkgsForSystem."${pkgName}-static";
+                  }) customPackages
+                );
+
+              # Only those customPackages that actually have a -win-static attr
+              winStaticPkgNames = builtins.filter (
+                pkgName: pkgsForSystem ? "${pkgName}-win-static"
+              ) customPackages;
+
+              winStaticChecks = builtins.listToAttrs (
+                map (pkgName: {
+                  name = "${pkgName}-win-static";
+                  value = pkgsForSystem."${pkgName}-win-static";
+                }) winStaticPkgNames
+              );
+            in
+            #baseChecks // winStaticChecks;
+            baseChecks;
         }) systems
       );
 
@@ -316,8 +395,6 @@
           default =
             pkgs.mkShell.override
               {
-                # Override stdenv in order to change compiler:
-                # stdenv = pkgs.clangStdenv;
               }
               {
                 name = "dev";
