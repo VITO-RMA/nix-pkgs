@@ -7,9 +7,11 @@
   mkPackageName,
 }:
 
-libpng.overrideAttrs (old: {
+libpng.overrideAttrs (old: rec {
   pname = mkPackageName old.pname static stdenv;
   buildInputs = [ zlib ];
+  propagatedBuildInputs = buildInputs;
+
   doCheck = false;
 
   configureFlags =

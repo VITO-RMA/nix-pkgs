@@ -21,7 +21,7 @@ let
 in
 (libtiff.override {
 }).overrideAttrs
-  (old: {
+  (old: rec {
     pname = mkPackageName old.pname static stdenv;
     dontDisableStatic = static;
 
@@ -33,6 +33,7 @@ in
       xz
       zstd
     ];
+    propagatedBuildInputs = buildInputs;
 
     patches = old.patches ++ [
       ./patches/libtiff-static-targets.patch

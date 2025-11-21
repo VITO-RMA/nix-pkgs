@@ -37,6 +37,7 @@ stdenv.mkDerivation rec {
     zlib
     openssl
   ];
+  propagatedBuildInputs = buildInputs;
 
   cmakeFlags = [
     "-DUSE_SYSTEM_MINIZIP=1"

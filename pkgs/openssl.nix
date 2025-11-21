@@ -10,9 +10,11 @@
 (openssl.override {
   static = static;
 }).overrideAttrs
-  (old: {
+  (old: rec {
     pname = mkPackageName old.pname static stdenv;
     buildInputs = [ zlib ];
+    propagatedBuildInputs = buildInputs;
+
     doCheck = false;
     withDocs = false;
 

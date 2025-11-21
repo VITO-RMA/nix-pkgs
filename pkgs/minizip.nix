@@ -7,9 +7,10 @@
   mkPackageName,
 }:
 
-minizip.overrideAttrs (old: {
+minizip.overrideAttrs (old: rec {
   pname = mkPackageName old.pname static stdenv;
   buildInputs = [ zlib ];
+  propagatedBuildInputs = buildInputs;
   doCheck = false;
 
   configureFlags =
