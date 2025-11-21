@@ -203,6 +203,6 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://www.gdal.org/";
     license = licenses.mit;
     maintainers = [ ];
-    platforms = platforms.unix;
+    platforms = platforms.all;
   };
 })

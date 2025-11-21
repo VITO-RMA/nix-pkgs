@@ -30,7 +30,7 @@ stdenv.mkDerivation rec {
   meta = with lib; {
     homepage = "https://github.com/foonathan/type_safe";
     description = "Zero overhead utilities for preventing bugs at compile time";
-    platforms = platforms.unix;
+    platforms = platforms.all;
     license = licenses.mit;
     maintainers = [ ];
   };

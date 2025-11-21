@@ -18,4 +18,8 @@ minizip.overrideAttrs (old: {
       "--enable-static"
       "--disable-shared"
     ];
+
+  meta = old.meta // {
+    platforms = lib.platforms.all;
+  };
 })

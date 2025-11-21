@@ -33,7 +33,7 @@ stdenv.mkDerivation rec {
   meta = with lib; {
     homepage = "https://github.com/p-ranav/indicators";
     description = "Activity Indicators for Modern C++ ";
-    platforms = platforms.unix;
+    platforms = platforms.all;
     license = licenses.mit;
     maintainers = [ ];
   };

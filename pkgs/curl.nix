@@ -11,6 +11,8 @@
 
 curl.overrideAttrs (old: {
   pname = mkPackageName old.pname static stdenv;
+  mingwSupport = false;
+
   buildInputs = [
     openssl
     zlib

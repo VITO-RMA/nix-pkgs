@@ -74,6 +74,6 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/OSGeo/libgeotiff";
     changelog = "https://github.com/OSGeo/libgeotiff/blob/${src.rev}/libgeotiff/NEWS";
     license = licenses.mit;
-    platforms = with platforms; linux ++ darwin;
+    platforms = platforms.all;
   };
 }

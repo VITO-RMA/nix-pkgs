@@ -83,6 +83,6 @@ stdenv.mkDerivation (finalAttrs: {
     ];
     maintainers = with maintainers; [ dotlambda ];
     teams = [ teams.geospatial ];
-    platforms = platforms.unix;
+    platforms = platforms.all;
   };
 })
