@@ -1,23 +1,37 @@
+# version in nixpkgs uses meson and does not compile on mingw
 {
   lib,
   stdenv,
-  tomlplusplus,
+  fetchFromGitHub,
+  cmake,
   static ? stdenv.hostPlatform.isStatic,
   mkPackageName,
 }:
 
-(tomlplusplus.override {
-}).overrideAttrs
-  (old: {
-    pname = mkPackageName old.pname static stdenv;
-    mingwSupport = false;
-    doCheck = false;
+stdenv.mkDerivation rec {
+  pname = mkPackageName "tomlplusplus" static stdenv;
+  version = "3.4.0";
 
-    mesonFlags =
-      old.mesonFlags
-      ++ (if static then [ "-Ddefault_library=static" ] else [ "-Ddefault_library=shared" ]);
-
-    meta = old.meta // {
-      platforms = lib.platforms.all;
+  src = fetchFromGitHub {
+      owner = "marzer";
+      repo = "tomlplusplus";
+      tag = "v${version}";
+      hash = "sha256-h5tbO0Rv2tZezY58yUbyRVpsfRjY3i+5TPkkxr6La8M=";
     };
-  })
+
+  nativeBuildInputs = [
+    cmake
+  ];
+
+  cmakeFlags = [
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+  ];
+
+  meta = with lib; {
+    homepage = "https://github.com/marzer/tomlplusplus";
+    description = "Header-only TOML config file parser and serializer for C++17";
+    license = licenses.mit;
+    pkgConfigModules = [ "tomlplusplus" ];
+    platforms = platforms.all;
+  };
+}
