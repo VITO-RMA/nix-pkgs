@@ -15,7 +15,11 @@
 
 let
   exts = stdenv.hostPlatform.extensions or { };
-  ext = if static then (exts.staticLibrary or ".a") else (exts.sharedLibrary or ".so");
+  ext =
+    if static then
+      (if stdenv.targetPlatform.isWindows then ".a" else exts.staticLibrary or ".a")
+    else
+      (exts.sharedLibrary or ".so");
 in
 stdenv.mkDerivation rec {
   pname = mkPackageName "libgeotiff" static stdenv;

@@ -57,7 +57,11 @@
 
 let
   exts = stdenv.hostPlatform.extensions or { };
-  ext = if static then (".a") else (exts.sharedLibrary or ".so");
+  ext =
+    if static then
+      (if stdenv.targetPlatform.isWindows then ".a" else exts.staticLibrary or ".a")
+    else
+      (exts.sharedLibrary or ".so");
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = mkPackageName ("gdal" + lib.optionalString useMinimalFeatures "-minimal") static stdenv;
@@ -97,9 +101,15 @@ stdenv.mkDerivation (finalAttrs: {
     "-DGDAL_USE_ZLIB=ON"
     "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
     "-DZLIB_LIBRARY_RELEASE=${lib.getLib zlib}/lib/libz${ext}"
+    "-DGDAL_USE_ZLIB=ON"
+    "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
+    "-DZLIB_LIBRARY_RELEASE=${lib.getLib zlib}/lib/libz${ext}"
+    "-DGDAL_USE_DEFLATE=ON"
     "-DDeflate_INCLUDE_DIR=${lib.getLib libdeflate}/include"
     "-DDeflate_LIBRARY_RELEASE=${lib.getLib libdeflate}/lib/libdeflate${ext}"
-    "-DGDAL_USE_DEFLATE=ON"
+    "-DGDAL_USE_LZMA=ON"
+    "-DLIBLZMA_INCLUDE_DIR=${lib.getDev xz}/include"
+    "-DLIBLZMA_LIBRARY=${lib.getLib xz}/lib/liblzma${ext}"
     "-DGDAL_USE_ARCHIVE=OFF"
     "-DGDAL_USE_SPATIALITE=OFF"
     "-DGDAL_ENABLE_DRIVER_AAIGRID=ON"
