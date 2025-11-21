@@ -302,31 +302,32 @@
           system: f { pkgs = import inputs.nixpkgs { inherit system; }; }
         );
 
-      # Build a package set for one system (dynamic + static + mingw)
+      # Build a package set for one system (glibc/Darwin static + musl static + mingw)
       mkPkgs =
         system:
         let
-          # Base pkgs for this system
-          pkgsDynamic = import nixpkgs {
-            inherit system;
-            # don't allow dependencies outside of buildInputs
-            config.strictDeps = true;
-            overlays = [
-              (mkOverlay false)
-            ];
-          };
+          # We only support musl on Linux; Darwin will keep its native libc
+          isLinux = builtins.elem system [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
 
-          # Static variants for the same system
-          pkgsStatic = import nixpkgs {
+          # Base pkgs without our overlay, used to derive both the glibc and musl package sets.
+          basePkgs = import nixpkgs {
             inherit system;
             config.strictDeps = true;
-            overlays = [
-              mingwOverlay
-              (mkOverlay true)
-            ];
           };
 
-          # Cross-compiled static for MinGW (x86_64-w64-mingw32)
+          # "Static" libraries built against the default libc (glibc on Linux,
+          # libSystem on Darwin), using `static = true` in your package
+          # expressions (pkgs/*.nix).
+          pkgsStaticGlibc = basePkgs.extend (mkOverlay true);
+
+          # Static libraries compiled using musl (Linux only), by extending the
+          # upstream `pkgsStatic` package set (which is musl+static on Linux).
+          pkgsStaticMusl = if isLinux then basePkgs.pkgsStatic.extend (mkOverlay true) else null;
+
+          # Cross-compiled static libraries for MinGW (x86_64-w64-mingw32)
           pkgsMingwCross = import nixpkgs {
             inherit system;
             config.strictDeps = true;
@@ -340,7 +341,7 @@
           };
         in
         {
-          inherit pkgsDynamic pkgsStatic pkgsMingwCross;
+          inherit pkgsStaticGlibc pkgsStaticMusl pkgsMingwCross;
         };
     in
     {
@@ -357,38 +358,45 @@
           value =
             let
               pkgsAll = mkPkgs system;
-              pkgsDynamic = pkgsAll.pkgsDynamic;
-              pkgsStatic = pkgsAll.pkgsStatic;
+              pkgsStaticGlibc = pkgsAll.pkgsStaticGlibc;
+              pkgsStaticMusl = pkgsAll.pkgsStaticMusl;
               pkgsMingwCross = pkgsAll.pkgsMingwCross;
 
               # Filter custom packages for MinGW based on mingwSupport attribute
               supportedMingwPackages = inputs.nixpkgs.lib.filter (
                 pkgName:
                 let
-                  pkg = pkgsStatic.${pkgName};
+                  pkg = pkgsMingwCross.${pkgName};
                 in
                 if pkg ? mingwSupport then pkg.mingwSupport else true
               ) customPackages;
 
+              staticAttrs = builtins.listToAttrs (
+                map (pkgName: {
+                  name = "${pkgName}-static";
+                  value = pkgsStaticGlibc.${pkgName};
+                }) customPackages
+              );
+
+              muslAttrs =
+                if pkgsStaticMusl != null then
+                  builtins.listToAttrs (
+                    map (pkgName: {
+                      name = "${pkgName}-musl-static";
+                      value = pkgsStaticMusl.${pkgName};
+                    }) customPackages
+                  )
+                else
+                  { };
+
+              winAttrs = builtins.listToAttrs (
+                map (pkgName: {
+                  name = "${pkgName}-win-static";
+                  value = pkgsMingwCross.${pkgName};
+                }) supportedMingwPackages
+              );
             in
-            builtins.listToAttrs (
-              map (pkgName: {
-                name = pkgName;
-                value = pkgsDynamic.${pkgName};
-              }) customPackages
-            )
-            // builtins.listToAttrs (
-              map (pkgName: {
-                name = "${pkgName}-static";
-                value = pkgsStatic.${pkgName};
-              }) customPackages
-            )
-            // builtins.listToAttrs (
-              map (pkgName: {
-                name = "${pkgName}-win-static";
-                value = pkgsMingwCross.${pkgName};
-              }) supportedMingwPackages
-            );
+            staticAttrs // muslAttrs // winAttrs;
         }) systems
       );
 
@@ -399,19 +407,12 @@
             let
               pkgsForSystem = self.packages.${system};
 
-              baseChecks =
-                builtins.listToAttrs (
-                  map (pkgName: {
-                    name = pkgName;
-                    value = pkgsForSystem.${pkgName};
-                  }) customPackages
-                )
-                // builtins.listToAttrs (
-                  map (pkgName: {
-                    name = "${pkgName}-static";
-                    value = pkgsForSystem."${pkgName}-static";
-                  }) customPackages
-                );
+              baseChecks = builtins.listToAttrs (
+                map (pkgName: {
+                  name = "${pkgName}-static";
+                  value = pkgsForSystem."${pkgName}-static";
+                }) customPackages
+              );
 
               winStaticPkgNames = builtins.filter (
                 pkgName: pkgsForSystem ? "${pkgName}-win-static"
