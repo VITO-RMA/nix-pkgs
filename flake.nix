@@ -386,7 +386,7 @@
             // builtins.listToAttrs (
               map (pkgName: {
                 name = "${pkgName}-win-static";
-                value = pkgsStatic.${pkgName};
+                value = pkgsMingwCross.${pkgName};
               }) supportedMingwPackages
             );
         }) systems
