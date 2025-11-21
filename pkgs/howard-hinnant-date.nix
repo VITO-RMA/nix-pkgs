@@ -10,7 +10,6 @@
 }).overrideAttrs
   (old: {
     pname = mkPackageName old.pname static stdenv;
-    mingwSupport = false;
     doCheck = false;
 
     cmakeFlags = [

@@ -8,6 +8,7 @@
   zlib,
   openssl ? null,
   static ? stdenv.hostPlatform.isStatic,
+  useMemFile ? (stdenv.hostPlatform.config or "" != "x86_64-w64-mingw32"),
   mkPackageName,
 }:
 
@@ -41,11 +42,11 @@ stdenv.mkDerivation rec {
     "-DUSE_SYSTEM_MINIZIP=1"
     "-DWINDOWSSTORE=OFF"
     "-DUSE_DTOA_LIBRARY=OFF"
-    "-DUSE_MEM_FILE=ON"
     "-DUSE_OPENSSL_MD5=ON"
-  ]
-  ++ [ (lib.cmakeBool "USE_OPENSSL_MD5" (openssl != null)) ]
-  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+    (lib.cmakeBool "USE_MEMFILE" useMemFile)
+    (lib.cmakeBool "USE_OPENSSL_MD5" (openssl != null))
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+  ];
 
   meta = with lib; {
     description = "C library for creating Excel XLSX files";
