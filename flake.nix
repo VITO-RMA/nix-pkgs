@@ -60,7 +60,7 @@
               "-musl"
             else
               "-glibc";
-          suffix = if static then "-static" else "";
+          suffix = if static && !(stdenv.hostPlatform.isStatic) then "-static" else "";
         in
         "${pkg}-mod${suffix}${clib}";
 
@@ -414,6 +414,13 @@
                 }) customPackages
               );
 
+              muslChecks = builtins.listToAttrs (
+                map (pkgName: {
+                  name = "${pkgName}-musl-static";
+                  value = pkgsForSystem."${pkgName}-musl-static";
+                }) customPackages
+              );
+
               winStaticPkgNames = builtins.filter (
                 pkgName: pkgsForSystem ? "${pkgName}-win-static"
               ) customPackages;
@@ -425,7 +432,19 @@
                 }) winStaticPkgNames
               );
             in
-            baseChecks // winStaticChecks;
+            baseChecks
+            // winStaticChecks
+            // (
+              if
+                builtins.elem system [
+                  "x86_64-linux"
+                  "aarch64-linux"
+                ]
+              then
+                muslChecks
+              else
+                { }
+            );
         }) systems
       );
 
