@@ -12,15 +12,6 @@
   static ? stdenv.hostPlatform.isStatic,
   mkPackageName,
 }:
-
-let
-  exts = stdenv.hostPlatform.extensions or { };
-  ext =
-    if static then
-      (if stdenv.targetPlatform.isWindows then ".a" else exts.staticLibrary or ".a")
-    else
-      (exts.sharedLibrary or ".so");
-in
 stdenv.mkDerivation rec {
   pname = mkPackageName "libgeotiff" static stdenv;
   version = "1.7.4";
@@ -63,9 +54,9 @@ stdenv.mkDerivation rec {
     "-DHAVE_TIFF=1"
     "-DHAVE_TIFFOPEN=1"
     "-DHAVE_TIFFMERGEFIELDINFO=1"
-    "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
-    "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${ext}"
-    "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
+    # "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
+    # "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${ext}"
+    # "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
   ]
   ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
 

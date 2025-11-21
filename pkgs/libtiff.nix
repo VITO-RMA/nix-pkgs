@@ -10,15 +10,6 @@
   static ? stdenv.hostPlatform.isStatic,
   mkPackageName,
 }:
-
-let
-  exts = stdenv.hostPlatform.extensions or { };
-  ext =
-    if static then
-      (if stdenv.targetPlatform.isWindows then ".a" else exts.staticLibrary or ".a")
-    else
-      (exts.sharedLibrary or ".so");
-in
 (libtiff.override {
 }).overrideAttrs
   (old: rec {
@@ -59,12 +50,6 @@ in
         "-DZSTD_HAVE_DECOMPRESS_STREAM=ON"
         "-DHAVE_JPEGTURBO_DUAL_MODE_8_12=OFF"
         "-DBUILD_DOC=OFF"
-        "-DLERC_INCLUDE_DIRS=${lib.getDev lerc}/include"
-        "-DLERC_LIBRARY_RELEASE=${lib.getLib lerc}/lib/libLerc${ext}"
-        "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
-        "-DZLIB_LIBRARY_RELEASE=${lib.getLib zlib}/lib/libz${ext}"
-        "-DZSTD_INCLUDE_DIRS=${lib.getDev zstd}/include"
-        "-DZSTD_LIBRARY_RELEASE=${lib.getLib zstd}/lib/libzstd${ext}"
       ]
       ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
   })

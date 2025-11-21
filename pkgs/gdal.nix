@@ -94,47 +94,30 @@ stdenv.mkDerivation (finalAttrs: {
     "-DGDAL_USE_GIF=OFF"
     "-DGDAL_USE_PNG=OFF"
     "-DGDAL_USE_ZSTD=ON"
-    # Both shouldn't be needed, but it depends on the order of findmodule calls
-    "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
-    "-DZSTD_INCLUDE_DIR=${lib.getDev zstd}/include"
-    "-DZSTD_LIBRARY=${lib.getLib zstd}/lib/libzstd${ext}"
     "-DGDAL_USE_ZLIB=ON"
-    "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
-    "-DZLIB_LIBRARY_RELEASE=${lib.getLib zlib}/lib/libz${ext}"
-    "-DGDAL_USE_ZLIB=ON"
-    "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
-    "-DZLIB_LIBRARY_RELEASE=${lib.getLib zlib}/lib/libz${ext}"
     "-DGDAL_USE_DEFLATE=ON"
-    "-DDeflate_INCLUDE_DIR=${lib.getLib libdeflate}/include"
-    "-DDeflate_LIBRARY_RELEASE=${lib.getLib libdeflate}/lib/libdeflate${ext}"
     "-DGDAL_USE_LZMA=ON"
-    "-DLIBLZMA_INCLUDE_DIR=${lib.getDev xz}/include"
-    "-DLIBLZMA_LIBRARY=${lib.getLib xz}/lib/liblzma${ext}"
     "-DGDAL_USE_ARCHIVE=OFF"
     "-DGDAL_USE_SPATIALITE=OFF"
     "-DGDAL_ENABLE_DRIVER_AAIGRID=ON"
     "-DGDAL_ENABLE_DRIVER_GTIFF=ON"
     "-DGDAL_ENABLE_DRIVER_VRT=ON"
     "-DOGR_ENABLE_DRIVER_CSV=ON"
-  ]
-  ++ lib.optionals static [
-    # rely on our specified lib paths to avoid picking up shared libs
-    "-DCMAKE_DISABLE_FIND_PACKAGE_ZSTD=ON"
+    (lib.cmakeBool "GDAL_USE_CURL" useCurl)
+    (lib.cmakeBool "GDAL_USE_TILEDB" useTiledb)
+    (lib.cmakeBool "GDAL_USE_BLOSC" useCBlosc)
+    (lib.cmakeBool "GDAL_USE_CRYPTOPP" useCryptopp)
+    (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2)
+    (lib.cmakeBool "GDAL_USE_QHULL" useQhull)
+    (lib.cmakeBool "BUILD_APPS" (buildTools))
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
   ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
     "-DCMAKE_SKIP_BUILD_RPATH=ON" # without, libgdal.so can't find libmariadb.so
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     "-DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=ON"
-  ]
-  ++ [ (lib.cmakeBool "GDAL_USE_CURL" useCurl) ]
-  ++ [ (lib.cmakeBool "GDAL_USE_TILEDB" useTiledb) ]
-  ++ [ (lib.cmakeBool "GDAL_USE_BLOSC" useCBlosc) ]
-  ++ [ (lib.cmakeBool "GDAL_USE_CRYPTOPP" useCryptopp) ]
-  ++ [ (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2) ]
-  ++ [ (lib.cmakeBool "GDAL_USE_QHULL" useQhull) ]
-  ++ [ (lib.cmakeBool "BUILD_APPS" (buildTools)) ]
-  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+  ];
 
   buildInputs =
     let
