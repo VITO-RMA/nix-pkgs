@@ -296,8 +296,7 @@
           system: f { pkgs = import inputs.nixpkgs { inherit system; }; }
         );
 
-      # Build a package set for one system (glibc/Darwin static + musl static + mingw)
-      mkPkgs =
+      mkBuildEnv =
         system:
         let
           # We only support musl on Linux; Darwin will keep its native libc
@@ -306,20 +305,28 @@
             "aarch64-linux"
           ];
 
-          # Base pkgs without our overlay, used to derive both the glibc and musl package sets.
           pkgsBase = import nixpkgs {
             inherit system;
             config.strictDeps = true;
           };
 
-          # "Static" libraries built against the default libc (glibc on Linux,
-          # libSystem on Darwin), using `static = true` in your package
-          # expressions (pkgs/*.nix).
+          pkgsDynamicGlibc = pkgsBase.extend (mkOverlay false);
           pkgsStaticGlibc = pkgsBase.extend (mkOverlay true);
-
-          # Static libraries compiled using musl (Linux only), by extending the
-          # upstream `pkgsStatic` package set (which is musl+static on Linux).
           pkgsStaticMusl = if isLinux then pkgsBase.pkgsStatic.extend (mkOverlay true) else null;
+        in
+        {
+          pkgsDefault = pkgsDynamicGlibc;
+          pkgsStatic = pkgsStaticGlibc;
+          pkgsStaticMusl = pkgsStaticMusl;
+        };
+
+      mkBuildEnvMingwCross =
+        system:
+        let
+          pkgsBase = import nixpkgs {
+            inherit system;
+            config.strictDeps = true;
+          };
 
           # Cross-compiled static libraries for MinGW (x86_64-w64-mingw32)
           pkgsMingwCross = import nixpkgs {
@@ -335,12 +342,8 @@
           };
         in
         {
-          inherit
-            pkgsBase
-            pkgsStaticGlibc
-            pkgsStaticMusl
-            pkgsMingwCross
-            ;
+          pkgsDefault = pkgsBase;
+          pkgsMingw = pkgsMingwCross;
         };
     in
     {
@@ -351,17 +354,20 @@
       # overlays applied as: (static-pkgs.overlayForStatic true)
       overlays.forStatic = mkOverlay true;
 
-      lib.mkPkgs = mkPkgs;
+      lib.mkBuildEnv = mkBuildEnv;
+      lib.mkBuildEnvMingwCross = mkBuildEnvMingwCross;
 
       packages = builtins.listToAttrs (
         map (system: {
           name = system;
           value =
             let
-              pkgsAll = mkPkgs system;
-              pkgsStaticGlibc = pkgsAll.pkgsStaticGlibc;
-              pkgsStaticMusl = pkgsAll.pkgsStaticMusl;
-              pkgsMingwCross = pkgsAll.pkgsMingwCross;
+              buildEnv = mkBuildEnv system;
+              buildEnvMingw = mkBuildEnvMingwCross system;
+
+              pkgsStaticGlibc = buildEnv.pkgsStatic;
+              pkgsStaticMusl = buildEnv.pkgsStaticMusl;
+              pkgsMingwCross = buildEnvMingw.pkgsMingw;
 
               # Filter custom packages for MinGW based on mingwSupport attribute
               supportedMingwPackages = inputs.nixpkgs.lib.filter (
