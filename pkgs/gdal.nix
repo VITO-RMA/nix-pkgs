@@ -15,6 +15,7 @@
   useHDF ? (!useMinimalFeatures),
   useLibXml2 ? (!useMinimalFeatures),
   useExpat ? true, # XLSX support
+  useSqlite ? true,
   useNetCDF ? (!useMinimalFeatures),
   usePostgres ? (!useMinimalFeatures),
   useQhull ? (!useMinimalFeatures),
@@ -113,6 +114,8 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "GDAL_USE_QHULL" useQhull)
     (lib.cmakeBool "GDAL_USE_EXPAT" useExpat)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLSX" useExpat)
+    (lib.cmakeBool "GDAL_USE_SQLITE3" useSqlite)
+    (lib.cmakeBool "OGR_ENABLE_DRIVER_GPKG" useSqlite)
     (lib.cmakeBool "BUILD_APPS" (buildTools))
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
@@ -137,6 +140,7 @@ stdenv.mkDerivation (finalAttrs: {
       armadilloDeps = lib.optionals useArmadillo [ armadillo ];
       libXml2Deps = lib.optionals useLibXml2 [ libxml2 ];
       expatDeps = lib.optionals useExpat [ expat ];
+      sqliteDeps = lib.optionals useSqlite [ sqlite ];
       cryptoppDeps = lib.optionals useCryptopp [ cryptopp ];
       qhullDeps = lib.optionals useQhull [ qhull ];
       cbloscDeps = lib.optionals useCBlosc [ c-blosc ];
@@ -159,7 +163,6 @@ stdenv.mkDerivation (finalAttrs: {
       openssl
       pcre2
       proj
-      sqlite
       zlib
       zstd
     ]
@@ -174,6 +177,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ netCdfDeps
     ++ armadilloDeps
     ++ cryptoppDeps
+    ++ sqliteDeps
     ++ qhullDeps
     ++ darwinDeps
     ++ nonDarwinDeps;
