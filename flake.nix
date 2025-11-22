@@ -19,6 +19,7 @@
       customPackages = [
         "pkg-cryptopp"
         "pkg-curl"
+        "pkg-eigen"
         "pkg-expat"
         "pkg-fmt"
         "pkg-gdal"
@@ -115,6 +116,10 @@
               openssl = final.pkg-openssl;
               zlib = final.pkg-zlib-compat;
               zstd = final.pkg-zstd;
+            };
+
+            pkg-eigen = final.callPackage ./pkgs/eigen.nix {
+              inherit static stdenv mkPackageName;
             };
 
             pkg-expat = final.callPackage ./pkgs/expat.nix {
