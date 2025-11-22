@@ -14,6 +14,7 @@
   useCryptopp ? (!useMinimalFeatures),
   useHDF ? (!useMinimalFeatures),
   useLibXml2 ? (!useMinimalFeatures),
+  useExpat ? true, # XLSX support
   useNetCDF ? (!useMinimalFeatures),
   usePostgres ? (!useMinimalFeatures),
   useQhull ? (!useMinimalFeatures),
@@ -103,12 +104,15 @@ stdenv.mkDerivation (finalAttrs: {
     "-DGDAL_ENABLE_DRIVER_GTIFF=ON"
     "-DGDAL_ENABLE_DRIVER_VRT=ON"
     "-DOGR_ENABLE_DRIVER_CSV=ON"
+
     (lib.cmakeBool "GDAL_USE_CURL" useCurl)
     (lib.cmakeBool "GDAL_USE_TILEDB" useTiledb)
     (lib.cmakeBool "GDAL_USE_BLOSC" useCBlosc)
     (lib.cmakeBool "GDAL_USE_CRYPTOPP" useCryptopp)
     (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2)
     (lib.cmakeBool "GDAL_USE_QHULL" useQhull)
+    (lib.cmakeBool "GDAL_USE_EXPAT" useExpat)
+    (lib.cmakeBool "OGR_ENABLE_DRIVER_XLSX" useExpat)
     (lib.cmakeBool "BUILD_APPS" (buildTools))
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
@@ -132,6 +136,7 @@ stdenv.mkDerivation (finalAttrs: {
       netCdfDeps = lib.optionals useNetCDF [ netcdf ];
       armadilloDeps = lib.optionals useArmadillo [ armadillo ];
       libXml2Deps = lib.optionals useLibXml2 [ libxml2 ];
+      expatDeps = lib.optionals useExpat [ expat ];
       cryptoppDeps = lib.optionals useCryptopp [ cryptopp ];
       qhullDeps = lib.optionals useQhull [ qhull ];
       cbloscDeps = lib.optionals useCBlosc [ c-blosc ];
@@ -142,7 +147,6 @@ stdenv.mkDerivation (finalAttrs: {
       ];
     in
     [
-      expat
       libgeotiff
       geos
       json_c
@@ -159,6 +163,7 @@ stdenv.mkDerivation (finalAttrs: {
       zlib
       zstd
     ]
+    ++ expatDeps
     ++ tileDbDeps
     ++ postgresDeps
     ++ arrowDeps
