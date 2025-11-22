@@ -19,6 +19,7 @@
       customPackages = [
         "pkg-cryptopp"
         "pkg-curl"
+        "pkg-doctest"
         "pkg-eigen"
         "pkg-expat"
         "pkg-fmt"
@@ -116,6 +117,10 @@
               openssl = final.pkg-openssl;
               zlib = final.pkg-zlib-compat;
               zstd = final.pkg-zstd;
+            };
+
+            pkg-doctest = final.callPackage ./pkgs/doctest.nix {
+              inherit static stdenv mkPackageName;
             };
 
             pkg-eigen = final.callPackage ./pkgs/eigen.nix {
