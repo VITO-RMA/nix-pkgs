@@ -98,12 +98,6 @@
             };
 
       # mkOverlay is a function that creates a Nix overlay for overriding or adding packages.
-      # It takes two arguments:
-      #   - static: a boolean indicating whether to build static versions of packages
-      #   - stdenv: the standard environment (compiler/toolchain) to use
-      # It returns a function of the form (final: prev: { ... }), which is the standard overlay signature in Nix.
-      # In this overlay, we override/add packages such as pkg-cryptopp by calling their respective .nix files
-      # with the given arguments (static, stdenv, mkPackageName).
       mkOverlay =
         static:
         (
@@ -313,7 +307,7 @@
           ];
 
           # Base pkgs without our overlay, used to derive both the glibc and musl package sets.
-          basePkgs = import nixpkgs {
+          pkgsBase = import nixpkgs {
             inherit system;
             config.strictDeps = true;
           };
@@ -321,11 +315,11 @@
           # "Static" libraries built against the default libc (glibc on Linux,
           # libSystem on Darwin), using `static = true` in your package
           # expressions (pkgs/*.nix).
-          pkgsStaticGlibc = basePkgs.extend (mkOverlay true);
+          pkgsStaticGlibc = pkgsBase.extend (mkOverlay true);
 
           # Static libraries compiled using musl (Linux only), by extending the
           # upstream `pkgsStatic` package set (which is musl+static on Linux).
-          pkgsStaticMusl = if isLinux then basePkgs.pkgsStatic.extend (mkOverlay true) else null;
+          pkgsStaticMusl = if isLinux then pkgsBase.pkgsStatic.extend (mkOverlay true) else null;
 
           # Cross-compiled static libraries for MinGW (x86_64-w64-mingw32)
           pkgsMingwCross = import nixpkgs {
@@ -341,7 +335,12 @@
           };
         in
         {
-          inherit pkgsStaticGlibc pkgsStaticMusl pkgsMingwCross;
+          inherit
+            pkgsBase
+            pkgsStaticGlibc
+            pkgsStaticMusl
+            pkgsMingwCross
+            ;
         };
     in
     {
@@ -350,7 +349,9 @@
 
       # A factory that *you* can use from consumer flakes:
       # overlays applied as: (static-pkgs.overlayForStatic true)
-      overlayForStatic = mkOverlay;
+      overlays.forStatic = mkOverlay true;
+
+      lib.mkPkgs = mkPkgs;
 
       packages = builtins.listToAttrs (
         map (system: {
