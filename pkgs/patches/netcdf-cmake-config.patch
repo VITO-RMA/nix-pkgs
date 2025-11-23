@@ -1,0 +1,14 @@
+diff '--color=auto' -Naur a/netCDFConfig.cmake.in b/netCDFConfig.cmake.in
+--- a/netCDFConfig.cmake.in	2025-02-07 22:40:00.000000000 +0100
++++ b/netCDFConfig.cmake.in	2025-11-23 16:30:59.303858384 +0100
+@@ -6,8 +6,8 @@
+ 
+ set(NetCDFVersion "@PACKAGE_VERSION@")
+ set_and_check(netCDF_INSTALL_PREFIX "@CMAKE_INSTALL_PREFIX@")
+-set_and_check(netCDF_INCLUDE_DIR "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_INCLUDEDIR@")
+-set_and_check(netCDF_LIB_DIR "@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_LIBDIR@")
++set_and_check(netCDF_INCLUDE_DIR "@CMAKE_INSTALL_INCLUDEDIR@")
++set_and_check(netCDF_LIB_DIR "@CMAKE_INSTALL_LIBDIR@")
+ set(netCDF_LIBRARIES netCDF::netcdf)
+ 
+ # include target information

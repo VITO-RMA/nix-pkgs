@@ -13,6 +13,29 @@
         "aarch64-darwin"
       ];
 
+      # # # create a list of all custom packages defined in this flake from the overlay
+      # customPackages =
+      #   let
+      #     lib = nixpkgs.lib;
+      #
+      #     exampleSystem = "x86_64-linux";
+      #
+      #     pkgsBase = import nixpkgs {
+      #       system = exampleSystem;
+      #       config.strictDeps = true;
+      #     };
+      #
+      #     pkgsWithOverlay = pkgsBase.extend (mkOverlay false);
+      #
+      #     baseNames = builtins.attrNames pkgsBase;
+      #     overlayNames = builtins.attrNames pkgsWithOverlay;
+      #
+      #     # Names that are present only after applying mkOverlay,
+      #     # i.e. the attrs introduced by your overlay.
+      #     addedNames = lib.subtractLists overlayNames baseNames;
+      #   in
+      #   lib.filter (name: lib.hasPrefix "pkg-" name) addedNames;
+
       # we prepend the packages with pkg to avoid rebuilding the world
       # otherwise all the packages in the system that depend on one of these
       # packages would need to be rebuilt to link against the static version
@@ -24,6 +47,8 @@
         "pkg-expat"
         "pkg-fmt"
         "pkg-gdal"
+        "pkg-hdf5"
+        "pkg-hwloc"
         "pkg-howard-hinnant-date"
         "pkg-geos"
         "pkg-indicators"
@@ -38,6 +63,7 @@
         "pkg-lyra"
         "pkg-lz4"
         "pkg-minizip"
+        "pkg-netcdf"
         "pkg-onetbb"
         "pkg-openssl"
         "pkg-pcre2"
@@ -100,6 +126,9 @@
             };
 
       # mkOverlay is a function that creates a Nix overlay for overriding or adding packages.
+      # we prepend the packages with pkg to avoid rebuilding the world
+      # otherwise all the packages in the system that depend on one of these
+      # packages would need to be rebuilt to link against the static version
       mkOverlay =
         static:
         (
@@ -140,14 +169,15 @@
               curl = final.pkg-curl;
               cryptopp = final.pkg-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
-              geos = final.pkg-geos;
               expat = final.pkg-expat;
+              geos = final.pkg-geos;
               json_c = final.pkg-json_c;
               lerc = final.pkg-lerc;
               libdeflate = final.pkg-libdeflate;
               libpng = final.pkg-libpng;
               libtiff = final.pkg-libtiff;
               libgeotiff = final.pkg-libgeotiff;
+              netcdf = final.pkg-netcdf;
               lz4 = final.pkg-lz4;
               openssl = final.pkg-openssl;
               pcre2 = final.pkg-pcre2;
@@ -160,6 +190,11 @@
 
             pkg-geos = final.callPackage ./pkgs/geos.nix {
               inherit static stdenv mkPackageName;
+            };
+
+            pkg-hdf5 = final.callPackage ./pkgs/hdf5.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-zlib-compat;
             };
 
             pkg-howard-hinnant-date = final.callPackage ./pkgs/howard-hinnant-date.nix {
@@ -234,6 +269,12 @@
 
             pkg-minizip = final.callPackage ./pkgs/minizip.nix {
               inherit static stdenv mkPackageName;
+              zlib = final.pkg-zlib-compat;
+            };
+
+            pkg-netcdf = final.callPackage ./pkgs/netcdf.nix {
+              inherit static stdenv mkPackageName;
+              hdf5 = final.pkg-hdf5;
               zlib = final.pkg-zlib-compat;
             };
 
@@ -332,6 +373,9 @@
 
       mkBuildEnvMingwCross =
         system:
+        {
+          llvm ? false,
+        }:
         let
           pkgsBase = import nixpkgs {
             inherit system;
@@ -344,6 +388,8 @@
             config.strictDeps = true;
             crossSystem = {
               config = "x86_64-w64-mingw32";
+              useLLVM = llvm;
+              #linker = if llvm then "lld" else "ld.gold";
             };
             overlays = [
               mingwOverlay
@@ -373,7 +419,7 @@
           value =
             let
               buildEnv = mkBuildEnv system;
-              buildEnvMingw = mkBuildEnvMingwCross system;
+              buildEnvMingw = mkBuildEnvMingwCross system { llvm = false; };
 
               pkgsStaticGlibc = buildEnv.pkgsStatic;
               pkgsStaticMusl = buildEnv.pkgsStaticMusl;
