@@ -69,7 +69,9 @@
       # otherwise all the packages in the system that depend on one of these
       # packages would need to be rebuilt to link against the static version
       mkOverlay =
-        static:
+        {
+          static ? false,
+        }:
         (
           final: prev:
           let
@@ -301,7 +303,9 @@
                   let
                     pkg = pkgs.${name};
                   in
-                  if pkg ? requireMingwSupport then pkg.mingwSupport else true
+                  # Fix: ensure we test for the actual attribute name `mingwSupport`
+                  # instead of using the boolean `requireMingwSupport` as an attr name.
+                  if pkg ? mingwSupport then pkg.mingwSupport else true
                 else
                   true
               )
@@ -328,9 +332,17 @@
             config.strictDeps = true;
           };
 
-          pkgsDynamicGlibc = pkgsBase.extend (mkOverlay false);
-          pkgsStaticGlibc = pkgsBase.extend (mkOverlay true);
-          pkgsStaticMusl = if isLinux then pkgsBase.pkgsStatic.extend (mkOverlay true) else null;
+          dynamicOverlay = mkOverlay {
+            static = false;
+          };
+
+          staticOverlay = mkOverlay {
+            static = true;
+          };
+
+          pkgsDynamicGlibc = pkgsBase.extend (dynamicOverlay);
+          pkgsStaticGlibc = pkgsBase.extend (staticOverlay);
+          pkgsStaticMusl = if isLinux then pkgsBase.pkgsStatic.extend (staticOverlay) else null;
         in
         {
           pkgsDefault = pkgsDynamicGlibc;
@@ -360,7 +372,7 @@
             };
             overlays = [
               mingwOverlay
-              (mkOverlay true)
+              (mkOverlay { static = true; })
             ];
           };
         in
@@ -371,11 +383,11 @@
     in
     {
       # A "normal" overlay (no parameters): used by nix tooling / flake check
-      overlays.default = mkOverlay false;
+      overlays.default = mkOverlay { static = false; };
 
       # A factory that *you* can use from consumer flakes:
       # overlays applied as: (static-pkgs.overlayForStatic true)
-      overlays.forStatic = mkOverlay true;
+      overlays.forStatic = mkOverlay { static = true; };
 
       lib.mkBuildEnv = mkBuildEnv;
       lib.mkBuildEnvMingwCross = mkBuildEnvMingwCross;
@@ -417,20 +429,16 @@
       devShells = forEachSupportedSystem (
         { pkgs, ... }:
         {
-          default =
-            pkgs.mkShell.override
-              {
-              }
-              {
-                name = "dev";
-                packages =
-                  with pkgs;
-                  [
-                    nil
-                    nixfmt-rfc-style
-                  ]
-                  ++ (if pkgs.system == "aarch64-darwin" then [ ] else [ gdb ]);
-              };
+          default = pkgs.mkShell {
+            name = "dev";
+            packages =
+              with pkgs;
+              [
+                nil
+                nixfmt-rfc-style
+              ]
+              ++ (if pkgs.system == "aarch64-darwin" then [ ] else [ gdb ]);
+          };
         }
       );
     };
