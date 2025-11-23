@@ -1,4 +1,3 @@
-# the upstream lyra package uses the meson build system, which does not install a cmake find config file.
 {
   lib,
   stdenv,

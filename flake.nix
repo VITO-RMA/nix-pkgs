@@ -45,18 +45,20 @@
           else
             let
               buildPkgs = prev.buildPackages;
-              gccWin32 = buildPkgs.wrapCC (
-                buildPkgs.gcc-unwrapped.override {
-                  threadsCross = {
-                    model = "win32";
-                    package = null;
-                  };
-                }
-              );
+              gccWin32 = buildPkgs.wrapCCWith {
+                cc = buildPkgs.gcc-unwrapped.override {
+                  # if you still want this:
+                  # threadsCross = {
+                  #   model = "win32";
+                  #   package = null;
+                  # };
+                };
+              };
+
               stdenvWin = prev.overrideCC baseStdenv gccWin32;
             in
             {
-              # make this the stdenv for MinGW targets
+              # make this the stdenv for MinGW target12s
               stdenv = stdenvWin;
             };
 
@@ -78,6 +80,7 @@
             stdenv = prev.stdenv;
           in
           {
+
             pkg-mod-cryptopp = final.callPackage ./pkgs/cryptopp.nix {
               inherit static stdenv mkPackageName;
             };
@@ -268,6 +271,20 @@
             pkg-mod-zstd = final.callPackage ./pkgs/zstd.nix {
               inherit static stdenv mkPackageName;
             };
+
+            windows =
+              (prev.windows or { })
+              // (
+                if (final.stdenv.hostPlatform.isWindows or false) then
+                  {
+                    mcfgthreads = final.callPackage ./pkgs/mcfgthreads.nix {
+                      inherit static stdenv;
+                      mcfgthreads = prev.windows.mcfgthreads;
+                    };
+                  }
+                else
+                  { }
+              );
           }
         );
 
