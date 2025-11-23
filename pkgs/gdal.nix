@@ -115,6 +115,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "GDAL_USE_EXPAT" useExpat)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLSX" useExpat)
     (lib.cmakeBool "GDAL_USE_SQLITE3" useSqlite)
+    (lib.cmakeBool "GDAL_USE_PCRE2" useSqlite) # pcre2 is only needed for the sqlite driver
     (lib.cmakeBool "OGR_ENABLE_DRIVER_GPKG" useSqlite)
     (lib.cmakeBool "BUILD_APPS" (buildTools))
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
@@ -140,7 +141,10 @@ stdenv.mkDerivation (finalAttrs: {
       armadilloDeps = lib.optionals useArmadillo [ armadillo ];
       libXml2Deps = lib.optionals useLibXml2 [ libxml2 ];
       expatDeps = lib.optionals useExpat [ expat ];
-      sqliteDeps = lib.optionals useSqlite [ sqlite ];
+      sqliteDeps = lib.optionals useSqlite [
+        sqlite
+        pcre2
+      ];
       cryptoppDeps = lib.optionals useCryptopp [ cryptopp ];
       qhullDeps = lib.optionals useQhull [ qhull ];
       cbloscDeps = lib.optionals useCBlosc [ c-blosc ];
@@ -161,7 +165,6 @@ stdenv.mkDerivation (finalAttrs: {
       libtiff
       lz4
       openssl
-      pcre2
       proj
       zlib
       zstd
