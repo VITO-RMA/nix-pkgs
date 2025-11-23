@@ -18,6 +18,10 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-z8muv/fl7+7NEZly/CHlBqjy4mIjnWRPSxxVIXp6ZGE=";
   };
 
+  patches = [
+    ./patches/type_safe-min-cmake-version.patch
+  ];
+
   nativeBuildInputs = [
     cmake
   ];

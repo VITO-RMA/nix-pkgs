@@ -1,0 +1,24 @@
+diff '--color=auto' -Naur a/CMakeLists.txt b/CMakeLists.txt
+--- a/CMakeLists.txt	2024-04-22 22:29:31.000000000 +0200
++++ b/CMakeLists.txt	2025-11-23 10:39:19.764514359 +0100
+@@ -2,7 +2,7 @@
+ # This file is subject to the license terms in the LICENSE file
+ # found in the top-level directory of this distribution.
+ 
+-cmake_minimum_required(VERSION 3.5)
++cmake_minimum_required(VERSION 3.25)
+ 
+ project(TYPE_SAFE)
+ 
+diff '--color=auto' -Naur a/external/debug_assert/CMakeLists.txt b/external/debug_assert/CMakeLists.txt
+--- a/external/debug_assert/CMakeLists.txt	2024-04-22 22:29:31.000000000 +0200
++++ b/external/debug_assert/CMakeLists.txt	2025-11-23 10:41:43.769718340 +0100
+@@ -2,7 +2,7 @@
+ # This file is subject to the license terms in the LICENSE file
+ # found in the top-level directory of this distribution.
+ 
+-cmake_minimum_required(VERSION 3.1)
++cmake_minimum_required(VERSION 3.25)
+ project(DEBUG_ASSERT)
+ 
+ # Determine if debug_assert is built as a subproject (using add_subdirectory)
