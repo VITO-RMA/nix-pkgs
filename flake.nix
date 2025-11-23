@@ -13,71 +13,6 @@
         "aarch64-darwin"
       ];
 
-      # # # create a list of all custom packages defined in this flake from the overlay
-      # customPackages =
-      #   let
-      #     lib = nixpkgs.lib;
-      #
-      #     exampleSystem = "x86_64-linux";
-      #
-      #     pkgsBase = import nixpkgs {
-      #       system = exampleSystem;
-      #       config.strictDeps = true;
-      #     };
-      #
-      #     pkgsWithOverlay = pkgsBase.extend (mkOverlay false);
-      #
-      #     baseNames = builtins.attrNames pkgsBase;
-      #     overlayNames = builtins.attrNames pkgsWithOverlay;
-      #
-      #     # Names that are present only after applying mkOverlay,
-      #     # i.e. the attrs introduced by your overlay.
-      #     addedNames = lib.subtractLists overlayNames baseNames;
-      #   in
-      #   lib.filter (name: lib.hasPrefix "pkg-" name) addedNames;
-
-      # we prepend the packages with pkg to avoid rebuilding the world
-      # otherwise all the packages in the system that depend on one of these
-      # packages would need to be rebuilt to link against the static version
-      customPackages = [
-        "pkg-cryptopp"
-        "pkg-curl"
-        "pkg-doctest"
-        "pkg-eigen"
-        "pkg-expat"
-        "pkg-fmt"
-        "pkg-gdal"
-        "pkg-hdf5"
-        "pkg-hwloc"
-        "pkg-howard-hinnant-date"
-        "pkg-geos"
-        "pkg-indicators"
-        "pkg-json_c"
-        "pkg-libdeflate"
-        "pkg-libgeotiff"
-        "pkg-libjpeg"
-        "pkg-libpng"
-        "pkg-libtiff"
-        "pkg-libxlsxwriter"
-        "pkg-lerc"
-        "pkg-lyra"
-        "pkg-lz4"
-        "pkg-minizip"
-        "pkg-netcdf"
-        "pkg-onetbb"
-        "pkg-openssl"
-        "pkg-pcre2"
-        "pkg-proj"
-        "pkg-spdlog"
-        "pkg-sqlite"
-        "pkg-tomlplusplus"
-        "pkg-type_safe"
-        "pkg-vc"
-        "pkg-zlib-compat"
-        "pkg-zstd"
-        "pkg-xz"
-      ];
-
       mkPackageName =
         pkg: static: stdenv:
         let
@@ -90,7 +25,7 @@
               "-glibc";
           suffix = if static && !(stdenv.hostPlatform.isStatic) then "-static" else "";
         in
-        "${pkg}-mod${suffix}${clib}";
+        "${pkg}${suffix}${clib}";
 
       mingwOverlay =
         final: prev:
@@ -129,6 +64,10 @@
       # we prepend the packages with pkg to avoid rebuilding the world
       # otherwise all the packages in the system that depend on one of these
       # packages would need to be rebuilt to link against the static version
+      #
+      # we prepend the packages with pkg-mod- to avoid rebuilding the world
+      # otherwise all the packages in the system that depend on one of these
+      # packages would need to be rebuilt to link against the static version
       mkOverlay =
         static:
         (
@@ -137,198 +76,194 @@
             stdenv = prev.stdenv;
           in
           {
-            pkg-cryptopp = final.callPackage ./pkgs/cryptopp.nix {
+            pkg-mod-cryptopp = final.callPackage ./pkgs/cryptopp.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-curl = final.callPackage ./pkgs/curl.nix {
+            pkg-mod-curl = final.callPackage ./pkgs/curl.nix {
               inherit static stdenv mkPackageName;
-              openssl = final.pkg-openssl;
-              zlib = final.pkg-zlib-compat;
-              zstd = final.pkg-zstd;
+              openssl = final.pkg-mod-openssl;
+              zlib = final.pkg-mod-zlib-compat;
+              zstd = final.pkg-mod-zstd;
             };
 
-            pkg-doctest = final.callPackage ./pkgs/doctest.nix {
-              inherit static stdenv mkPackageName;
-            };
-
-            pkg-eigen = final.callPackage ./pkgs/eigen.nix {
+            pkg-mod-doctest = final.callPackage ./pkgs/doctest.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-expat = final.callPackage ./pkgs/expat.nix {
+            pkg-mod-eigen = final.callPackage ./pkgs/eigen.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-fmt = final.callPackage ./pkgs/fmt.nix {
+            pkg-mod-expat = final.callPackage ./pkgs/expat.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-gdal = final.callPackage ./pkgs/gdal.nix {
+            pkg-mod-fmt = final.callPackage ./pkgs/fmt.nix {
               inherit static stdenv mkPackageName;
-              curl = final.pkg-curl;
-              cryptopp = final.pkg-cryptopp;
+            };
+
+            pkg-mod-gdal = final.callPackage ./pkgs/gdal.nix {
+              inherit static stdenv mkPackageName;
+              curl = final.pkg-mod-curl;
+              cryptopp = final.pkg-mod-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
-              expat = final.pkg-expat;
-              geos = final.pkg-geos;
-              json_c = final.pkg-json_c;
-              lerc = final.pkg-lerc;
-              libdeflate = final.pkg-libdeflate;
-              libpng = final.pkg-libpng;
-              libtiff = final.pkg-libtiff;
-              libgeotiff = final.pkg-libgeotiff;
-              netcdf = final.pkg-netcdf;
-              lz4 = final.pkg-lz4;
-              openssl = final.pkg-openssl;
-              pcre2 = final.pkg-pcre2;
-              proj = final.pkg-proj;
-              sqlite = final.pkg-sqlite;
-              zlib = final.pkg-zlib-compat;
-              xz = final.pkg-xz;
-              zstd = final.pkg-zstd;
+              expat = final.pkg-mod-expat;
+              geos = final.pkg-mod-geos;
+              json_c = final.pkg-mod-json_c;
+              lerc = final.pkg-mod-lerc;
+              libdeflate = final.pkg-mod-libdeflate;
+              libpng = final.pkg-mod-libpng;
+              libtiff = final.pkg-mod-libtiff;
+              libgeotiff = final.pkg-mod-libgeotiff;
+              netcdf = final.pkg-mod-netcdf;
+              lz4 = final.pkg-mod-lz4;
+              openssl = final.pkg-mod-openssl;
+              pcre2 = final.pkg-mod-pcre2;
+              proj = final.pkg-mod-proj;
+              sqlite = final.pkg-mod-sqlite;
+              zlib = final.pkg-mod-zlib-compat;
+              xz = final.pkg-mod-xz;
+              zstd = final.pkg-mod-zstd;
             };
 
-            pkg-geos = final.callPackage ./pkgs/geos.nix {
+            pkg-mod-geos = final.callPackage ./pkgs/geos.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-hdf5 = final.callPackage ./pkgs/hdf5.nix {
+            pkg-mod-hdf5 = final.callPackage ./pkgs/hdf5.nix {
               inherit static stdenv mkPackageName;
-              zlib = final.pkg-zlib-compat;
+              zlib = final.pkg-mod-zlib-compat;
             };
 
-            pkg-howard-hinnant-date = final.callPackage ./pkgs/howard-hinnant-date.nix {
-              inherit static stdenv mkPackageName;
-            };
-
-            pkg-hwloc = final.callPackage ./pkgs/hwloc.nix {
+            pkg-mod-howard-hinnant-date = final.callPackage ./pkgs/howard-hinnant-date.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-indicators = final.callPackage ./pkgs/indicators.nix {
+            pkg-mod-hwloc = final.callPackage ./pkgs/hwloc.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-json_c = final.callPackage ./pkgs/json_c.nix {
+            pkg-mod-indicators = final.callPackage ./pkgs/indicators.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-libdeflate = final.callPackage ./pkgs/libdeflate.nix {
-              inherit static stdenv mkPackageName;
-              zlib = final.pkg-zlib-compat;
-            };
-
-            pkg-libexpat = final.callPackage ./pkgs/libexpat.nix {
+            pkg-mod-json_c = final.callPackage ./pkgs/json_c.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-libgeotiff = final.callPackage ./pkgs/libgeotiff.nix {
+            pkg-mod-libdeflate = final.callPackage ./pkgs/libdeflate.nix {
               inherit static stdenv mkPackageName;
-              libtiff = final.pkg-libtiff;
-              lerc = final.pkg-lerc;
-              proj = final.pkg-proj;
-              zlib = final.pkg-zlib-compat;
-              zstd = final.pkg-zstd;
+              zlib = final.pkg-mod-zlib-compat;
             };
 
-            pkg-libjpeg = final.callPackage ./pkgs/libjpeg.nix {
+            pkg-mod-libgeotiff = final.callPackage ./pkgs/libgeotiff.nix {
               inherit static stdenv mkPackageName;
+              libtiff = final.pkg-mod-libtiff;
+              lerc = final.pkg-mod-lerc;
+              proj = final.pkg-mod-proj;
+              zlib = final.pkg-mod-zlib-compat;
+              zstd = final.pkg-mod-zstd;
             };
 
-            pkg-libpng = final.callPackage ./pkgs/libpng.nix {
-              inherit static stdenv mkPackageName;
-              zlib = final.pkg-zlib-compat;
-            };
-
-            pkg-libtiff = final.callPackage ./pkgs/libtiff.nix {
-              inherit static stdenv mkPackageName;
-              lerc = final.pkg-lerc;
-              libdeflate = final.pkg-libdeflate;
-              zlib = final.pkg-zlib-compat;
-              xz = final.pkg-xz;
-              zstd = final.pkg-zstd;
-            };
-
-            pkg-libxlsxwriter = final.callPackage ./pkgs/libxlsxwriter.nix {
-              inherit static stdenv mkPackageName;
-              zlib = final.pkg-zlib-compat;
-              minizip = final.pkg-minizip;
-            };
-
-            pkg-lerc = final.callPackage ./pkgs/lerc.nix {
+            pkg-mod-libjpeg = final.callPackage ./pkgs/libjpeg.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-lyra = final.callPackage ./pkgs/lyra.nix {
+            pkg-mod-libpng = final.callPackage ./pkgs/libpng.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
+            };
+
+            pkg-mod-libtiff = final.callPackage ./pkgs/libtiff.nix {
+              inherit static stdenv mkPackageName;
+              lerc = final.pkg-mod-lerc;
+              libdeflate = final.pkg-mod-libdeflate;
+              zlib = final.pkg-mod-zlib-compat;
+              xz = final.pkg-mod-xz;
+              zstd = final.pkg-mod-zstd;
+            };
+
+            pkg-mod-libxlsxwriter = final.callPackage ./pkgs/libxlsxwriter.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
+              minizip = final.pkg-mod-minizip;
+            };
+
+            pkg-mod-lerc = final.callPackage ./pkgs/lerc.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-lz4 = final.callPackage ./pkgs/lz4.nix {
+            pkg-mod-lyra = final.callPackage ./pkgs/lyra.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-minizip = final.callPackage ./pkgs/minizip.nix {
-              inherit static stdenv mkPackageName;
-              zlib = final.pkg-zlib-compat;
-            };
-
-            pkg-netcdf = final.callPackage ./pkgs/netcdf.nix {
-              inherit static stdenv mkPackageName;
-              hdf5 = final.pkg-hdf5;
-              zlib = final.pkg-zlib-compat;
-            };
-
-            pkg-onetbb = final.callPackage ./pkgs/onetbb.nix {
-              inherit static stdenv mkPackageName;
-              hwloc = final.pkg-hwloc;
-            };
-
-            pkg-openssl = final.callPackage ./pkgs/openssl.nix {
-              inherit static stdenv mkPackageName;
-              zlib = final.pkg-zlib-compat;
-            };
-
-            pkg-pcre2 = final.callPackage ./pkgs/pcre2.nix {
+            pkg-mod-lz4 = final.callPackage ./pkgs/lz4.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-proj = final.callPackage ./pkgs/proj.nix {
+            pkg-mod-minizip = final.callPackage ./pkgs/minizip.nix {
               inherit static stdenv mkPackageName;
-              sqlite = final.pkg-sqlite;
+              zlib = final.pkg-mod-zlib-compat;
             };
 
-            pkg-spdlog = final.callPackage ./pkgs/spdlog.nix {
+            pkg-mod-netcdf = final.callPackage ./pkgs/netcdf.nix {
               inherit static stdenv mkPackageName;
-              fmt = final.pkg-fmt;
+              hdf5 = final.pkg-mod-hdf5;
+              zlib = final.pkg-mod-zlib-compat;
             };
 
-            pkg-sqlite = final.callPackage ./pkgs/sqlite.nix {
+            pkg-mod-onetbb = final.callPackage ./pkgs/onetbb.nix {
               inherit static stdenv mkPackageName;
-              zlib = final.pkg-zlib-compat;
+              hwloc = final.pkg-mod-hwloc;
             };
 
-            pkg-type_safe = final.callPackage ./pkgs/type_safe.nix {
+            pkg-mod-openssl = final.callPackage ./pkgs/openssl.nix {
               inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
             };
 
-            pkg-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix {
-              inherit static stdenv mkPackageName;
-            };
-
-            pkg-vc = final.callPackage ./pkgs/vc.nix {
+            pkg-mod-pcre2 = final.callPackage ./pkgs/pcre2.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-zlib-compat = final.callPackage ./pkgs/zlib-ng.nix {
+            pkg-mod-proj = final.callPackage ./pkgs/proj.nix {
+              inherit static stdenv mkPackageName;
+              sqlite = final.pkg-mod-sqlite;
+            };
+
+            pkg-mod-spdlog = final.callPackage ./pkgs/spdlog.nix {
+              inherit static stdenv mkPackageName;
+              fmt = final.pkg-mod-fmt;
+            };
+
+            pkg-mod-sqlite = final.callPackage ./pkgs/sqlite.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
+            };
+
+            pkg-mod-type_safe = final.callPackage ./pkgs/type_safe.nix {
+              inherit static stdenv mkPackageName;
+            };
+
+            pkg-mod-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix {
+              inherit static stdenv mkPackageName;
+            };
+
+            pkg-mod-vc = final.callPackage ./pkgs/vc.nix {
+              inherit static stdenv mkPackageName;
+            };
+
+            pkg-mod-zlib-compat = final.callPackage ./pkgs/zlib-ng.nix {
               inherit static stdenv mkPackageName;
               withZlibCompat = true;
             };
 
-            pkg-xz = final.callPackage ./pkgs/xz.nix {
+            pkg-mod-xz = final.callPackage ./pkgs/xz.nix {
               inherit static stdenv mkPackageName;
             };
 
-            pkg-zstd = final.callPackage ./pkgs/zstd.nix {
+            pkg-mod-zstd = final.callPackage ./pkgs/zstd.nix {
               inherit static stdenv mkPackageName;
             };
           }
@@ -346,6 +281,38 @@
         inputs.nixpkgs.lib.genAttrs supportedSystems (
           system: f { pkgs = import inputs.nixpkgs { inherit system; }; }
         );
+
+      forEachPkgMod =
+        {
+          pkgs,
+          mkName ? (name: name),
+          requireMingwSupport ? false,
+        }:
+
+        if pkgs == null then
+          { }
+        else
+          let
+            names = builtins.filter (
+              name:
+              nixpkgs.lib.hasPrefix "pkg-mod-" name
+              && (
+                if requireMingwSupport then
+                  let
+                    pkg = pkgs.${name};
+                  in
+                  if pkg ? requireMingwSupport then pkg.mingwSupport else true
+                else
+                  true
+              )
+            ) (builtins.attrNames pkgs);
+          in
+          builtins.listToAttrs (
+            map (name: {
+              name = mkName name;
+              value = pkgs.${name};
+            }) names
+          );
 
       mkBuildEnv =
         system:
@@ -425,91 +392,27 @@
               pkgsStaticMusl = buildEnv.pkgsStaticMusl;
               pkgsMingwCross = buildEnvMingw.pkgsMingw;
 
-              # Filter custom packages for MinGW based on mingwSupport attribute
-              supportedMingwPackages = inputs.nixpkgs.lib.filter (
-                pkgName:
-                let
-                  pkg = pkgsMingwCross.${pkgName};
-                in
-                if pkg ? mingwSupport then pkg.mingwSupport else true
-              ) customPackages;
+              staticAttrs = forEachPkgMod {
+                pkgs = pkgsStaticGlibc;
+                mkName = name: "${name}-static";
+              };
 
-              staticAttrs = builtins.listToAttrs (
-                map (pkgName: {
-                  name = "${pkgName}-static";
-                  value = pkgsStaticGlibc.${pkgName};
-                }) customPackages
-              );
+              muslAttrs = forEachPkgMod {
+                pkgs = pkgsStaticMusl;
+                mkName = name: "${name}-musl-static";
+              };
 
-              muslAttrs =
-                if pkgsStaticMusl != null then
-                  builtins.listToAttrs (
-                    map (pkgName: {
-                      name = "${pkgName}-musl-static";
-                      value = pkgsStaticMusl.${pkgName};
-                    }) customPackages
-                  )
-                else
-                  { };
-
-              winAttrs = builtins.listToAttrs (
-                map (pkgName: {
-                  name = "${pkgName}-win-static";
-                  value = pkgsMingwCross.${pkgName};
-                }) supportedMingwPackages
-              );
+              winAttrs = forEachPkgMod {
+                pkgs = pkgsMingwCross;
+                mkName = name: "${name}-win-static";
+                requireMingwSupport = true;
+              };
             in
             staticAttrs // muslAttrs // winAttrs;
         }) systems
       );
 
-      checks = builtins.listToAttrs (
-        map (system: {
-          name = system;
-          value =
-            let
-              pkgsForSystem = self.packages.${system};
-
-              baseChecks = builtins.listToAttrs (
-                map (pkgName: {
-                  name = "${pkgName}-static";
-                  value = pkgsForSystem."${pkgName}-static";
-                }) customPackages
-              );
-
-              muslChecks = builtins.listToAttrs (
-                map (pkgName: {
-                  name = "${pkgName}-musl-static";
-                  value = pkgsForSystem."${pkgName}-musl-static";
-                }) customPackages
-              );
-
-              winStaticPkgNames = builtins.filter (
-                pkgName: pkgsForSystem ? "${pkgName}-win-static"
-              ) customPackages;
-
-              winStaticChecks = builtins.listToAttrs (
-                map (pkgName: {
-                  name = "${pkgName}-win-static";
-                  value = pkgsForSystem."${pkgName}-win-static";
-                }) winStaticPkgNames
-              );
-            in
-            baseChecks
-            // winStaticChecks
-            // (
-              if
-                builtins.elem system [
-                  "x86_64-linux"
-                  "aarch64-linux"
-                ]
-              then
-                muslChecks
-              else
-                { }
-            );
-        }) systems
-      );
+      checks = self.packages;
 
       devShells = forEachSupportedSystem (
         { pkgs, ... }:
