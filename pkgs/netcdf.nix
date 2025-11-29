@@ -22,6 +22,7 @@ stdenv.mkDerivation rec {
 
   patches = [
     ./patches/netcdf-cmake-config.patch
+    ./patches/netcdf-mingw-stat.patch
   ];
 
   nativeBuildInputs = [

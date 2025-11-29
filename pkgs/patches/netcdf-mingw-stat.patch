@@ -1,0 +1,87 @@
+diff '--color=auto' -Naur a/libdispatch/dpathmgr.c b/libdispatch/dpathmgr.c
+--- a/libdispatch/dpathmgr.c	2025-02-07 22:40:00.000000000 +0100
++++ b/libdispatch/dpathmgr.c	2025-11-29 17:52:07.247649730 +0100
+@@ -410,7 +410,7 @@
+ 
+ #ifdef WINUTF8
+     if(acp == CP_UTF8) {
+-        /* This should take utf8 directly */ 
++        /* This should take utf8 directly */
+         f = fopen(cvtpath,bflags8);
+     } else
+ #endif
+@@ -448,7 +448,7 @@
+ #endif
+ #ifdef WINUTF8
+     if(acp == CP_UTF8) {
+-        /* This should take utf8 directly */ 
++        /* This should take utf8 directly */
+         fd = _open(cvtpath,flags,mode);
+     } else
+ #endif
+@@ -515,7 +515,7 @@
+     if((cvtpath = NCpathcvt(path8)) == NULL) {stat = EINVAL; goto done;}
+ #ifdef WINUTF8
+     if(acp == CP_UTF8) {
+-        /* This should take utf8 directly */ 
++        /* This should take utf8 directly */
+         if(_access(cvtpath,mode) < 0) {stat = errno; goto done;}
+     } else
+ #endif
+@@ -548,7 +548,7 @@
+     if((cvtpath = NCpathcvt(path8)) == NULL) {status=ENOMEM; goto done;}
+ #ifdef WINUTF8
+     if(acp == CP_UTF8) {
+-        /* This should take utf8 directly */ 
++        /* This should take utf8 directly */
+         if(remove(cvtpath) < 0) {status = errno; goto done;}
+     } else
+ #endif
+@@ -580,7 +580,7 @@
+     if((cvtpath = NCpathcvt(path8)) == NULL) {status=ENOMEM; goto done;}
+ #ifdef WINUTF8
+     if(acp == CP_UTF8) {
+-        /* This should take utf8 directly */ 
++        /* This should take utf8 directly */
+         if(_mkdir(cvtpath) < 0) {status = errno; goto done;}
+     } else
+ #endif
+@@ -607,7 +607,7 @@
+ 
+     /* First, convert from current Code Page to utf8 */
+     if((status = ansi2utf8(path,&path8))) goto done;
+-	
++
+     cvtname = NCpathcvt(path8);
+     if(cvtname == NULL) {errno = ENOENT; status = -1;}
+     status = rmdir(cvtname);
+@@ -698,12 +698,20 @@
+     if((cvtpath = NCpathcvt(path8)) == NULL) {status=ENOMEM; goto done;}
+ #ifdef WINUTF8
+     if(acp == CP_UTF8) {
++        #ifdef __MINGW32__
++        if(stat(cvtpath,buf) < 0) {status = errno; goto done;}
++        #else
+         if(_stat64(cvtpath,buf) < 0) {status = errno; goto done;}
++        #endif
+     } else
+ #endif
+     {
+         if((status = utf82wide(cvtpath,&wpath))) {status = ENOENT; goto done;}
++        #ifdef __MINGW32__
++        if(wstat(wpath,buf) < 0) {status = errno; goto done;}
++        #else
+         if(_wstat64(wpath,buf) < 0) {status = errno; goto done;}
++        #endif
+     }
+ 
+ done:
+@@ -731,7 +739,7 @@
+     if(_setmode(fd,_O_BINARY)<0) return NC_EINVAL;
+     fd = _fileno(stderr);
+     if(_setmode(fd,_O_BINARY)<0) return NC_EINVAL;
+-    return NC_NOERR;        
++    return NC_NOERR;
+ }
+ 
+ #else /*!WINPATH*/

@@ -1,7 +1,7 @@
 {
   description = "Reusable static overrides for various libraries";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.11";
 
   outputs =
     { self, nixpkgs, ... }@inputs:
@@ -237,6 +237,10 @@
               sqlite = final.pkg-mod-sqlite;
             };
 
+            pkg-mod-reproc = final.callPackage ./pkgs/reproc.nix {
+              inherit static stdenv mkPackageName;
+            };
+
             pkg-mod-spdlog = final.callPackage ./pkgs/spdlog.nix {
               inherit static stdenv mkPackageName;
               fmt = final.pkg-mod-fmt;
@@ -357,9 +361,9 @@
             static = true;
           };
 
-          pkgsDynamicGlibc = pkgsBase.extend (dynamicOverlay);
-          pkgsStaticGlibc = pkgsBase.extend (staticOverlay);
-          pkgsStaticMusl = if isLinux then pkgsBase.pkgsStatic.extend (staticOverlay) else null;
+          pkgsDynamicGlibc = pkgsBase.extend dynamicOverlay;
+          pkgsStaticGlibc = pkgsBase.extend staticOverlay;
+          pkgsStaticMusl = if isLinux then pkgsBase.pkgsStatic.extend staticOverlay else null;
         in
         {
           pkgsDefault = pkgsDynamicGlibc;
