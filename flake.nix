@@ -251,6 +251,13 @@
               zlib = final.pkg-mod-zlib-compat;
             };
 
+            pkg-mod-sqlpp11 = final.callPackage ./pkgs/sqlpp11.nix {
+              inherit static stdenv mkPackageName;
+              withSqlite = true;
+              sqlite3 = final.pkg-mod-sqlite;
+              howard-hinnant-date = final.pkg-mod-howard-hinnant-date.dev;
+            };
+
             pkg-mod-type_safe = final.callPackage ./pkgs/type_safe.nix {
               inherit static stdenv mkPackageName;
             };
