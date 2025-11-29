@@ -117,7 +117,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "GDAL_USE_SQLITE3" useSqlite)
     (lib.cmakeBool "GDAL_USE_PCRE2" useSqlite) # pcre2 is only needed for the sqlite driver
     (lib.cmakeBool "OGR_ENABLE_DRIVER_GPKG" useSqlite)
-    (lib.cmakeBool "BUILD_APPS" (buildTools))
+    (lib.cmakeBool "BUILD_APPS" buildTools)
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
   ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
