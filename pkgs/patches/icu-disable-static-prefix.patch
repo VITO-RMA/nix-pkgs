@@ -1,0 +1,19 @@
+diff '--color=auto' -Naur a/icudefs.mk.in b/icudefs.mk.in
+--- a/icudefs.mk.in	2024-10-24 20:24:00.000000000 +0200
++++ b/icudefs.mk.in	2025-11-29 23:27:39.609610621 +0100
+@@ -208,13 +208,13 @@
+ 
+ ## If we can't use the shared libraries, use the static libraries
+ ifneq ($(ENABLE_SHARED),YES)
+-STATIC_PREFIX_WHEN_USED = s
++STATIC_PREFIX_WHEN_USED =
+ else
+ STATIC_PREFIX_WHEN_USED = 
+ endif
+ 
+ # Static library prefix and file extension
+-STATIC_PREFIX = s
++STATIC_PREFIX =
+ LIBSICU = $(LIBPREFIX)$(STATIC_PREFIX)$(ICUPREFIX)
+ A = a
+ SOBJ = $(SO)

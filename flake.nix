@@ -149,6 +149,10 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-icu = final.callPackage ./pkgs/icu.nix {
+              inherit static stdenv mkPackageName;
+            };
+
             pkg-mod-indicators = final.callPackage ./pkgs/indicators.nix {
               inherit static stdenv mkPackageName;
             };
