@@ -211,6 +211,14 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-maplibre-native = final.callPackage ./pkgs/maplibre-native.nix {
+              inherit static stdenv mkPackageName;
+              sqlite = final.pkg-mod-sqlite;
+              zlib = final.pkg-mod-zlib-compat;
+              icu = final.pkg-mod-icu;
+              qtbase = final.qt6.qtbase;
+            };
+
             pkg-mod-minizip = final.callPackage ./pkgs/minizip.nix {
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
@@ -330,6 +338,7 @@
             names = builtins.filter (
               name:
               nixpkgs.lib.hasPrefix "pkg-mod-" name
+              && name != "pkg-mod-maplibre-native"
               && (
                 if requireMingwSupport then
                   let
