@@ -12,8 +12,8 @@
 }:
 
 stdenv.mkDerivation rec {
-  pname = mkPackageName "type_safe" static stdenv;
-  version = "v0.2.4";
+  pname = mkPackageName "maplibre-native" static stdenv;
+  version = "10.1.0";
 
   mingwSupport = false;
   dontWrapQtApps = true;
