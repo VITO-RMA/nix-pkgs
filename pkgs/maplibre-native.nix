@@ -52,8 +52,9 @@ stdenv.mkDerivation rec {
     "-DMLN_WITH_WERROR=OFF"
     "-DMLN_WITH_QT=ON"
     "-DMLN_QT_LIBRARY_ONLY=ON"
-    "-DMLN_QT_STATIC=ON"
+    "-DMLN_QT_STATIC=OFF"
     "-DMLN_QT_WITH_INTERNAL_SQLITE=ON"
+    #(lib.cmakeBool "MLN_QT_STATIC" (!static))
   ]
   ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
 
