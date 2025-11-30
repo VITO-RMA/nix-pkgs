@@ -338,7 +338,7 @@
             names = builtins.filter (
               name:
               nixpkgs.lib.hasPrefix "pkg-mod-" name
-              #&& name != "pkg-mod-maplibre-native"
+              && name != "pkg-mod-maplibre-native"
               && (
                 if requireMingwSupport then
                   let
