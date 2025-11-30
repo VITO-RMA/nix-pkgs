@@ -215,7 +215,6 @@
               inherit static stdenv mkPackageName;
               sqlite = final.pkg-mod-sqlite;
               zlib = final.pkg-mod-zlib-compat;
-              icu = final.pkg-mod-icu;
               qtbase = final.qt6.qtbase;
             };
 

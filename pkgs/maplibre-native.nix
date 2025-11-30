@@ -7,7 +7,6 @@
   mkPackageName,
   sqlite,
   zlib,
-  icu,
   qtbase,
 }:
 
@@ -41,7 +40,6 @@ stdenv.mkDerivation rec {
   buildInputs = [
     sqlite
     zlib
-    icu
     qtbase
   ];
 
@@ -55,6 +53,7 @@ stdenv.mkDerivation rec {
     "-DMLN_QT_LIBRARY_ONLY=ON"
     "-DMLN_QT_STATIC=ON"
     "-DMLN_QT_WITH_INTERNAL_SQLITE=ON"
+    "-DMLN_QT_WITH_INTERNAL_ICU=ON"
     #(lib.cmakeBool "MLN_QT_STATIC" (!static))
   ]
   ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
