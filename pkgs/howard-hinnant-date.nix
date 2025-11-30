@@ -15,6 +15,6 @@
     cmakeFlags = [
       "-DBUILD_TZ_LIB=ON"
       "-DUSE_SYSTEM_TZ_DB=ON"
-    ]
-    ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+      (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+    ];
   })
