@@ -1,0 +1,18 @@
+diff --git a/platform/qt/QMapLibreGLConfig.cmake.in b/platform/qt/QMapLibreGLConfig.cmake.in
+index d3ae5c80b..90837447a 100644
+--- a/platform/qt/QMapLibreGLConfig.cmake.in
++++ b/platform/qt/QMapLibreGLConfig.cmake.in
+@@ -11,5 +11,13 @@ if(@MLN_QT_STATIC@ AND NOT @MLN_QT_INSIDE_PLUGIN@ AND NOT @MLN_QT_WITH_INTERNAL_
+                   COMPONENTS Sql @REQUIRED_QT_VERSION@)
+ endif()
+ 
++if(@MLN_QT_STATIC@ AND @MLN_QT_WITH_INTERNAL_SQLITE@)
++  find_dependency(SQLite3 REQUIRED)
++endif()
++
++if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND @MLN_QT_STATIC@ AND NOT @MLN_QT_WITH_INTERNAL_ICU@)
++  find_dependency(ICU COMPONENTS uc REQUIRED)
++endif()
++
+ include("${CMAKE_CURRENT_LIST_DIR}/QMapLibreGLTargets.cmake")
+ @PACKAGE_INCLUDE_QCHTARGETS@
