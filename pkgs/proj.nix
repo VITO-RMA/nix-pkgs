@@ -8,6 +8,7 @@
   sqlite,
   testers,
   static ? stdenv.hostPlatform.isStatic,
+  embed-data ? true,
   mkPackageName,
 }:
 
@@ -48,8 +49,10 @@ stdenv.mkDerivation (finalAttrs: {
     "-DENABLE_CURL=OFF"
     "-DENABLE_TIFF=OFF"
     "-DBUILD_APPS=OFF"
-  ]
-  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+    (lib.cmakeBool "EMBED_RESOURCE_FILES" embed-data)
+    (lib.cmakeBool "USE_ONLY_EMBEDDED_RESOURCE_FILES" embed-data)
+  ];
 
   CXXFLAGS = [
     # GCC 13: error: 'int64_t' in namespace 'std' does not name a type
@@ -81,8 +84,6 @@ stdenv.mkDerivation (finalAttrs: {
     pkgConfigModules = [
       "proj"
     ];
-    maintainers = with maintainers; [ dotlambda ];
-    teams = [ teams.geospatial ];
     platforms = platforms.all;
   };
 })
