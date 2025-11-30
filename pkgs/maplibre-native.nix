@@ -7,6 +7,7 @@
   mkPackageName,
   sqlite,
   zlib,
+  icu,
   qtbase,
 }:
 
@@ -33,6 +34,11 @@ stdenv.mkDerivation rec {
     ./patches/maplibre-native-fix-includes.patch
   ];
 
+  # postPatch = ''
+  #   substituteInPlace platform/qt/qt.cmake \
+  #       --replace 'install(TARGETS qmaplibregl' 'install(TARGETS qmaplibregl mbgl-vendor-nunicode'
+  # '';
+
   nativeBuildInputs = [
     cmake
   ];
@@ -41,6 +47,7 @@ stdenv.mkDerivation rec {
     sqlite
     zlib
     qtbase
+    icu
   ];
 
   transitiveBuildInputs = buildInputs;
@@ -51,11 +58,11 @@ stdenv.mkDerivation rec {
     "-DMLN_WITH_WERROR=OFF"
     "-DMLN_WITH_QT=ON"
     "-DMLN_QT_LIBRARY_ONLY=ON"
-    "-DMLN_QT_WITH_INTERNAL_SQLITE=ON"
-    "-DMLN_QT_WITH_INTERNAL_ICU=ON"
+    "-DMLN_QT_WITH_INTERNAL_SQLITE=ON" # this actually used the sqlite from buildInputs (just not the one from qtsql)
+    "-DMLN_QT_WITH_INTERNAL_ICU=OFF"
     (lib.cmakeBool "MLN_QT_STATIC" static)
-  ]
-  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+  ];
 
   meta = with lib; {
     homepage = "https://github.com/foonathan/type_safe";

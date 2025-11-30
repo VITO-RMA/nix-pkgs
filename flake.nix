@@ -216,6 +216,7 @@
               sqlite = final.pkg-mod-sqlite;
               zlib = final.pkg-mod-zlib-compat;
               qtbase = final.qt6.qtbase;
+              icu = final.pkg-mod-icu;
             };
 
             pkg-mod-minizip = final.callPackage ./pkgs/minizip.nix {
