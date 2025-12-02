@@ -136,6 +136,10 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-gtest = final.callPackage ./pkgs/gtest.nix {
+              inherit static stdenv mkPackageName;
+            };
+
             pkg-mod-hdf5 = final.callPackage ./pkgs/hdf5.nix {
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
