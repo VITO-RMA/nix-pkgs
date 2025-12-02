@@ -37,7 +37,7 @@ stdenv.mkDerivation rec {
   ]
   ++ [
     (lib.cmakeBool "ZSTD_BUILD_SHARED" (!static))
-    (lib.cmakeBool "ZSTD_BUILD_STATIC" (static))
+    (lib.cmakeBool "ZSTD_BUILD_STATIC" static)
   ];
 
   meta = with lib; {
