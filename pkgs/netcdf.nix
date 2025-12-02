@@ -21,7 +21,8 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    ./patches/netcdf-cmake-config.patch
+    ./patches/netcdf-dependencies.patch
+    ./patches/netcdf-pkgconfig.patch
     ./patches/netcdf-mingw-stat.patch
   ];
 
@@ -37,6 +38,7 @@ stdenv.mkDerivation rec {
   propagatedBuildInputs = buildInputs;
 
   cmakeFlags = [
+    "-DHDF5_VERSION=1.14.6"
     "-DBUILD_TESTING=OFF"
     "-DNETCDF_ENABLE_DAP_REMOTE_TESTS=OFF"
     "-DNETCDF_ENABLE_EXAMPLES=OFF"
@@ -55,6 +57,7 @@ stdenv.mkDerivation rec {
     "-DNETCDF_BUILD_UTILITIES=OFF"
     "-DNETCDF_ENABLE_FILTER_ZSTD=OFF"
     "-DDISABLE_INSTALL_DEPENDENCIES=ON"
+    "-DHDF5_DIR=${hdf5}/cmake"
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ];
 

@@ -143,6 +143,9 @@
             pkg-mod-hdf5 = final.callPackage ./pkgs/hdf5.nix {
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
+              fortran = final.fortran;
+              szip = final.szip;
+              mpi = final.mpi;
             };
 
             pkg-mod-howard-hinnant-date = final.callPackage ./pkgs/howard-hinnant-date.nix {
@@ -232,6 +235,12 @@
               inherit static stdenv mkPackageName;
               hdf5 = final.pkg-mod-hdf5;
               zlib = final.pkg-mod-zlib-compat;
+            };
+
+            pkg-mod-netcdf-cxx4 = final.callPackage ./pkgs/netcdf-cxx4.nix {
+              inherit static stdenv mkPackageName;
+              hdf5 = final.pkg-mod-hdf5;
+              netcdf = final.pkg-mod-netcdf;
             };
 
             pkg-mod-onetbb = final.callPackage ./pkgs/onetbb.nix {
