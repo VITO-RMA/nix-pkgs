@@ -257,6 +257,14 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-shapelib = final.callPackage ./pkgs/shapelib.nix {
+              inherit static stdenv mkPackageName;
+            };
+
+            pkg-mod-scnlib = final.callPackage ./pkgs/scnlib.nix {
+              inherit static stdenv mkPackageName;
+            };
+
             pkg-mod-spdlog = final.callPackage ./pkgs/spdlog.nix {
               inherit static stdenv mkPackageName;
               fmt = final.pkg-mod-fmt;
