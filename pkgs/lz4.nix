@@ -12,8 +12,8 @@
     pname = mkPackageName old.pname static stdenv;
     doCheck = false;
 
-    cmakeFlags =
-      old.cmakeFlags or [ ]
-      ++ [ "-DLZ4_BUILD_CLI=OFF" ]
-      ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+    cmakeFlags = old.cmakeFlags or [ ] ++ [
+      "-DLZ4_BUILD_CLI=OFF"
+      (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+    ];
   })

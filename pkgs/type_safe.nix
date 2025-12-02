@@ -28,8 +28,8 @@ stdenv.mkDerivation rec {
 
   cmakeFlags = [
     "-DTYPE_SAFE_BUILD_TEST_EXAMPLE=OFF"
-  ]
-  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+  ];
 
   meta = with lib; {
     homepage = "https://github.com/foonathan/type_safe";
