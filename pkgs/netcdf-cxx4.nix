@@ -11,7 +11,7 @@
 (netcdfcxx4.override {
   inherit netcdf hdf5;
 }).overrideAttrs
-  (old: {
+  (old: rec {
     pname = mkPackageName old.pname static stdenv;
     doCheck = false;
 
@@ -30,6 +30,8 @@
       netcdf
       hdf5
     ];
+
+    propagatedBuildInputs = buildInputs;
 
     cmakeFlags = old.cmakeFlags or [ ] ++ [
       "-DNCXX_ENABLE_TESTS=OFF"
