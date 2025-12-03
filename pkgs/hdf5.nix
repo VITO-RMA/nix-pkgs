@@ -14,7 +14,7 @@
   szip,
   mpiSupport ? false,
   mpi,
-  static ? stdenv.hostPlatform.isStatic,javaSupport ? false,
+  static ? stdenv.hostPlatform.isStatic,
   threadsafe ? false,
 }:
 
@@ -23,7 +23,7 @@
 assert !cppSupport || !mpiSupport;
 
 let
-  inherit (lib) optional optionals;
+  inherit (lib) optional;
 in
 
 stdenv.mkDerivation rec {
@@ -58,8 +58,7 @@ stdenv.mkDerivation rec {
   ]
   ++ optional fortranSupport fortran;
 
-  buildInputs =
-    optional fortranSupport fortran ++ optional szipSupport szip;
+  buildInputs = optional fortranSupport fortran ++ optional szipSupport szip;
 
   propagatedBuildInputs = optional zlibSupport zlib ++ optional mpiSupport mpi;
 

@@ -24,6 +24,7 @@ stdenv.mkDerivation rec {
     ./patches/netcdf-dependencies.patch
     ./patches/netcdf-pkgconfig.patch
     ./patches/netcdf-mingw-stat.patch
+    ./patches/netcdf-install-prefix.patch
   ];
 
   nativeBuildInputs = [

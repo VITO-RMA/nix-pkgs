@@ -27,14 +27,13 @@ stdenv.mkDerivation rec {
     "-DINDICATORS_BUILD_TESTS=OFF"
     "-DINDICATORS_SAMPLES=OFF"
     "-DINDICATORS_DEMO=OFF"
-  ]
-  ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+  ];
 
   meta = with lib; {
     homepage = "https://github.com/p-ranav/indicators";
     description = "Activity Indicators for Modern C++ ";
     platforms = platforms.all;
     license = licenses.mit;
-    maintainers = [ ];
   };
 }
