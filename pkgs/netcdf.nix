@@ -7,8 +7,17 @@
   cmake,
   zlib,
   hdf5,
+  tinyxml2,
 }:
 
+let
+  exts = stdenv.hostPlatform.extensions or { };
+  ext =
+    if static then
+      (if stdenv.targetPlatform.isWindows then ".a" else exts.staticLibrary or ".a")
+    else
+      (exts.sharedLibrary or ".so");
+in
 stdenv.mkDerivation rec {
   pname = mkPackageName "netcdf" static stdenv;
   version = "4.9.3";
@@ -34,6 +43,7 @@ stdenv.mkDerivation rec {
   buildInputs = [
     zlib
     hdf5
+    tinyxml2
   ];
 
   propagatedBuildInputs = buildInputs;
@@ -45,7 +55,7 @@ stdenv.mkDerivation rec {
     "-DNETCDF_ENABLE_EXAMPLES=OFF"
     "-DNETCDF_ENABLE_FILTER_BLOSC=OFF"
     "-DNETCDF_ENABLE_FILTER_TESTING=OFF"
-    "-DNETCDF_ENABLE_LIBXML2=OFF"
+    "-DNETCDF_ENABLE_LIBXML2=ON"
     "-DNETCDF_ENABLE_S3=OFF"
     "-DNETCDF_ENABLE_TESTS=OFF"
     "-DNETCDF_ENABLE_DAP=OFF"
@@ -58,6 +68,8 @@ stdenv.mkDerivation rec {
     "-DNETCDF_BUILD_UTILITIES=OFF"
     "-DNETCDF_ENABLE_FILTER_ZSTD=OFF"
     "-DDISABLE_INSTALL_DEPENDENCIES=ON"
+    "-DLIBXML2_INCLUDE_DIR=${tinyxml2}/include"
+    "-DLIBXML2_LIBRARY=${tinyxml2}/lib/libtinyxml2${ext}"
     "-DHDF5_DIR=${hdf5}/cmake"
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ];

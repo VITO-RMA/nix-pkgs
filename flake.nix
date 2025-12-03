@@ -239,6 +239,7 @@
               inherit static stdenv mkPackageName;
               hdf5 = final.pkg-mod-hdf5;
               zlib = final.pkg-mod-zlib-compat;
+              tinyxml2 = final.pkg-mod-tinyxml-2;
             };
 
             pkg-mod-netcdf-cxx4 = final.callPackage ./pkgs/netcdf-cxx4.nix {
@@ -293,6 +294,10 @@
               withSqlite = true;
               sqlite3 = final.pkg-mod-sqlite;
               howard-hinnant-date = final.pkg-mod-howard-hinnant-date.dev;
+            };
+
+            pkg-mod-tinyxml-2 = final.callPackage ./pkgs/tinyxml-2.nix {
+              inherit static stdenv mkPackageName;
             };
 
             pkg-mod-type_safe = final.callPackage ./pkgs/type_safe.nix {

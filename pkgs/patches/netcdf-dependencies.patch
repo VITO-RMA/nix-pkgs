@@ -195,7 +195,7 @@ index 987b2ad..0dfda8e 100644
  
 +if(NOT "@BUILD_SHARED_LIBS@")
 +  include(CMakeFindDependencyMacro)
-+  find_dependency(tinyxml2 CONFIG)
++  find_dependency(tinyxml2 CONFIG REQUIRED)
 +  if("@FOUND_CURL@")
 +    find_dependency(CURL)
 +  endif()
