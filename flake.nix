@@ -92,6 +92,10 @@
               zstd = final.pkg-mod-zstd;
             };
 
+            pkg-mod-debug_assert = final.callPackage ./pkgs/debug_assert.nix {
+              inherit static stdenv mkPackageName;
+            };
+
             pkg-mod-doctest = final.callPackage ./pkgs/doctest.nix {
               inherit static stdenv mkPackageName;
             };
@@ -293,6 +297,7 @@
 
             pkg-mod-type_safe = final.callPackage ./pkgs/type_safe.nix {
               inherit static stdenv mkPackageName;
+              debug_assert = final.pkg-mod-debug_assert;
             };
 
             pkg-mod-tomlplusplus = final.callPackage ./pkgs/tomlplusplus.nix {

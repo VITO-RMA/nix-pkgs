@@ -4,6 +4,7 @@
   fetchFromGitHub,
   cmake,
   static ? stdenv.hostPlatform.isStatic,
+  debug_assert,
   mkPackageName,
 }:
 
@@ -22,6 +23,12 @@ stdenv.mkDerivation rec {
     ./patches/type_safe-min-cmake-version.patch
   ];
 
+  buildInputs = [
+    debug_assert
+  ];
+  propagatedBuildInputs = buildInputs;
+  transitiveBuildInputs = buildInputs;
+
   nativeBuildInputs = [
     cmake
   ];
@@ -36,6 +43,5 @@ stdenv.mkDerivation rec {
     description = "Zero overhead utilities for preventing bugs at compile time";
     platforms = platforms.all;
     license = licenses.mit;
-    maintainers = [ ];
   };
 }
