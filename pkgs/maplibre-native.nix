@@ -50,7 +50,7 @@ stdenv.mkDerivation rec {
     icu
   ];
 
-  transitiveBuildInputs = buildInputs;
+  propagatedBuildInputs = buildInputs;
 
   cmakeFlags = [
     "-DMLN_WITH_RTTI=ON"

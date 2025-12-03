@@ -31,7 +31,7 @@ stdenv.mkDerivation rec {
     fast-float
   ];
 
-  transitiveBuildInputs = buildInputs;
+  propagatedBuildInputs = buildInputs;
 
   cmakeFlags = [
     "-DSCN_TESTS=OFF"

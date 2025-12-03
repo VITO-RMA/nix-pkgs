@@ -27,7 +27,6 @@ stdenv.mkDerivation rec {
     debug_assert
   ];
   propagatedBuildInputs = buildInputs;
-  transitiveBuildInputs = buildInputs;
 
   nativeBuildInputs = [
     cmake

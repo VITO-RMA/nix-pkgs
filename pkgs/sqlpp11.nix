@@ -35,7 +35,7 @@ stdenv.mkDerivation rec {
     in
     [ howard-hinnant-date ] ++ sqliteDeps;
 
-  transitiveBuildInputs = buildInputs;
+  propagatedBuildInputs = buildInputs;
 
   cmakeFlags = [
     "-DBUILD_TESTING:BOOL=OFF"

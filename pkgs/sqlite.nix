@@ -39,7 +39,7 @@ stdenv.mkDerivation rec {
     in
     [ ] ++ zlibDeps;
 
-  transitiveBuildInputs = buildInputs;
+  propagatedBuildInputs = buildInputs;
 
   # if(VCPKG_LIBRARY_LINKAGE STREQUAL "dynamic")
   #     if(VCPKG_TARGET_IS_WINDOWS)
