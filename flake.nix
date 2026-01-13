@@ -461,6 +461,7 @@
       # overlays applied as: (static-pkgs.overlayForStatic true)
       overlays.forStatic = mkOverlay { static = true; };
 
+      lib.mkOverlay = mkOverlay;
       lib.mkBuildEnv = mkBuildEnv;
       lib.mkBuildEnvMingwCross = mkBuildEnvMingwCross;
 
