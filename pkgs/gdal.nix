@@ -113,6 +113,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2)
     (lib.cmakeBool "GDAL_USE_QHULL" useQhull)
     (lib.cmakeBool "GDAL_USE_EXPAT" useExpat)
+    (lib.cmakeBool "GDAL_ENABLE_DRIVER_NETCDF" useNetCDF)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLSX" useExpat)
     (lib.cmakeBool "GDAL_USE_SQLITE3" useSqlite)
     (lib.cmakeBool "GDAL_USE_PCRE2" useSqlite) # pcre2 is only needed for the sqlite driver
