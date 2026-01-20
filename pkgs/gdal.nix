@@ -187,6 +187,9 @@ stdenv.mkDerivation (finalAttrs: {
 
   propagatedBuildInputs = finalAttrs.buildInputs;
 
+  NIX_CFLAGS_COMPILE = lib.optionalString (
+    stdenv.hostPlatform.isWindows && static && useSqlite
+  ) "-DPCRE2_STATIC";
   NIX_CFLAGS_LINK = if static && stdenv.cc.isGNU then " -static-libgcc -static-libstdc++" else "";
 
   enableParallelBuilding = true;

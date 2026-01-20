@@ -115,6 +115,15 @@
             pkg-mod-gdal = final.callPackage ./pkgs/gdal.nix {
               inherit static stdenv mkPackageName;
               useMinimalFeatures = false;
+              useArmadillo = false; # armadillo doesn't support static builds
+              useArrow = false; # arrow doesn't support static builds well
+              useTiledb = false; # tiledb doesn't support Windows
+              usePostgres = false; # libpq doesn't support Windows
+              useCurl = false; # curl dependencies don't support Windows
+              useNetCDF = false; # netcdf doesn't support Windows well
+              useHDF = false; # hdf doesn't support Windows well
+              useQhull = false; # qhull doesn't support Windows
+              useCBlosc = false; # c-blosc fails to compile on Windows
               curl = final.pkg-mod-curl;
               cryptopp = final.pkg-mod-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
