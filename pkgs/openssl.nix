@@ -16,7 +16,6 @@
     propagatedBuildInputs = buildInputs;
 
     doCheck = false;
-    withDocs = false;
 
     configureFlags =
       (old.configureFlags or [ ])
