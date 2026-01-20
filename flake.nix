@@ -120,7 +120,7 @@
               useTiledb = false; # tiledb doesn't support Windows
               usePostgres = false; # libpq doesn't support Windows
               useCurl = false; # curl dependencies don't support Windows
-              useNetCDF = false; # netcdf doesn't support Windows well
+              useNetCDF = true; # netcdf doesn't support Windows well
               useHDF = false; # hdf doesn't support Windows well
               useQhull = false; # qhull doesn't support Windows
               useCBlosc = false; # c-blosc fails to compile on Windows
