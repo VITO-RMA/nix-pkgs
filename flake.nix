@@ -114,6 +114,32 @@
 
             pkg-mod-gdal = final.callPackage ./pkgs/gdal.nix {
               inherit static stdenv mkPackageName;
+              useMinimalFeatures = false;
+              curl = final.pkg-mod-curl;
+              cryptopp = final.pkg-mod-cryptopp;
+              c-blosc = final.c-blosc; # not overridden here yet
+              expat = final.pkg-mod-expat;
+              geos = final.pkg-mod-geos;
+              json_c = final.pkg-mod-json_c;
+              lerc = final.pkg-mod-lerc;
+              libdeflate = final.pkg-mod-libdeflate;
+              libpng = final.pkg-mod-libpng;
+              libtiff = final.pkg-mod-libtiff;
+              libgeotiff = final.pkg-mod-libgeotiff;
+              netcdf = final.pkg-mod-netcdf;
+              lz4 = final.pkg-mod-lz4;
+              openssl = final.pkg-mod-openssl;
+              pcre2 = final.pkg-mod-pcre2;
+              proj = final.pkg-mod-proj;
+              sqlite = final.pkg-mod-sqlite;
+              zlib = final.pkg-mod-zlib-compat;
+              xz = final.pkg-mod-xz;
+              zstd = final.pkg-mod-zstd;
+            };
+
+            pkg-mod-gdal-minimal = final.callPackage ./pkgs/gdal.nix {
+              inherit static stdenv mkPackageName;
+              useMinimalFeatures = true;
               curl = final.pkg-mod-curl;
               cryptopp = final.pkg-mod-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
