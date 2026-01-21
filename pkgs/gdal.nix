@@ -121,6 +121,13 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "BUILD_APPS" buildTools)
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
+  ++ lib.optionals (stdenv.hostPlatform.isWindows && static) [
+    # Force CMake to use the static iconv library instead of the dynamic one
+    "-DIconv_INCLUDE_DIR=${lib.getDev libiconv}/include"
+    "-DIconv_LIBRARY=${lib.getLib libiconv}/lib/libiconv.a"
+    "-DIconv_CHARSET_LIBRARY=${lib.getLib libiconv}/lib/libcharset.a"
+    "-DIconv_IS_BUILT_IN=FALSE"
+  ]
   ++ lib.optionals stdenv.hostPlatform.isMusl [
     # Disable float16 support on musl since it lacks proper support
     "-DCMAKE_C_FLAGS=-DGDAL_DISABLE_FLOAT16"
@@ -156,6 +163,7 @@ stdenv.mkDerivation (finalAttrs: {
       qhullDeps = lib.optionals useQhull [ qhull ];
       cbloscDeps = lib.optionals useCBlosc [ c-blosc ];
 
+      mingwDeps = lib.optionals stdenv.hostPlatform.isWindows [ libiconv ];
       darwinDeps = lib.optionals stdenv.hostPlatform.isDarwin [ libiconv ];
       nonDarwinDeps = lib.optionals (!stdenv.hostPlatform.isDarwin) [
         arrowDeps
@@ -189,6 +197,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ cryptoppDeps
     ++ sqliteDeps
     ++ qhullDeps
+    ++ mingwDeps
     ++ darwinDeps
     ++ nonDarwinDeps;
 

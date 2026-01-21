@@ -132,6 +132,8 @@
               json_c = final.pkg-mod-json_c;
               lerc = final.pkg-mod-lerc;
               libdeflate = final.pkg-mod-libdeflate;
+              libiconv =
+                if stdenv.hostPlatform.isWindows or false then final.pkg-mod-libiconv else final.libiconv;
               libpng = final.pkg-mod-libpng;
               libtiff = final.pkg-mod-libtiff;
               libgeotiff = final.pkg-mod-libgeotiff;
@@ -157,6 +159,8 @@
               json_c = final.pkg-mod-json_c;
               lerc = final.pkg-mod-lerc;
               libdeflate = final.pkg-mod-libdeflate;
+              libiconv =
+                if stdenv.hostPlatform.isWindows or false then final.pkg-mod-libiconv else final.libiconv;
               libpng = final.pkg-mod-libpng;
               libtiff = final.pkg-mod-libtiff;
               libgeotiff = final.pkg-mod-libgeotiff;
@@ -210,6 +214,10 @@
             pkg-mod-libdeflate = final.callPackage ./pkgs/libdeflate.nix {
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
+            };
+
+            pkg-mod-libiconv = final.callPackage ./pkgs/libiconv.nix {
+              inherit static stdenv mkPackageName;
             };
 
             pkg-mod-libgeotiff = final.callPackage ./pkgs/libgeotiff.nix {
