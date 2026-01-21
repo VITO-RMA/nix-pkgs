@@ -208,6 +208,14 @@ stdenv.mkDerivation (finalAttrs: {
   ) "-DPCRE2_STATIC";
   NIX_CFLAGS_LINK = if static && stdenv.cc.isGNU then " -static-libgcc -static-libstdc++" else "";
 
+  # the dynamic libiconv package is also present in the environment, so force linking against the static one if needed
+  postInstall = lib.optionalString (stdenv.hostPlatform.isWindows && static) ''
+    # Fix pkg-config file to include static libiconv library path
+    if [ -f "$out/lib/pkgconfig/gdal.pc" ]; then
+      sed -i "s|-liconv -lcharset|-L${libiconv}/lib -liconv -lcharset|g" "$out/lib/pkgconfig/gdal.pc"
+    fi
+  '';
+
   enableParallelBuilding = true;
   doInstallCheck = false;
 
