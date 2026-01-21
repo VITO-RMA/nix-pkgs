@@ -121,13 +121,6 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "BUILD_APPS" buildTools)
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
-  ++ lib.optionals ((stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) && static) [
-    # Force CMake to use the static iconv library instead of the dynamic one
-    "-DIconv_INCLUDE_DIR=${lib.getDev libiconv}/include"
-    "-DIconv_LIBRARY=${lib.getLib libiconv}/lib/libiconv.a"
-    "-DIconv_CHARSET_LIBRARY=${lib.getLib libiconv}/lib/libcharset.a"
-    "-DIconv_IS_BUILT_IN=FALSE"
-  ]
   ++ lib.optionals stdenv.hostPlatform.isMusl [
     # Disable float16 support on musl since it lacks proper support
     "-DCMAKE_C_FLAGS=-DGDAL_DISABLE_FLOAT16"
@@ -207,16 +200,6 @@ stdenv.mkDerivation (finalAttrs: {
     stdenv.hostPlatform.isWindows && static && useSqlite
   ) "-DPCRE2_STATIC";
   NIX_CFLAGS_LINK = if static && stdenv.cc.isGNU then " -static-libgcc -static-libstdc++" else "";
-
-  # the dynamic libiconv package is also present in the environment, so force linking against the static one if needed
-  postInstall =
-    lib.optionalString ((stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) && static)
-      ''
-        # Fix pkg-config file to include static libiconv library path
-        if [ -f "$out/lib/pkgconfig/gdal.pc" ]; then
-          sed -i "s|-liconv\>|-L${libiconv}/lib -liconv|g" "$out/lib/pkgconfig/gdal.pc"
-        fi
-      '';
 
   enableParallelBuilding = true;
   doInstallCheck = false;

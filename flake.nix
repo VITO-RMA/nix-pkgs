@@ -142,6 +142,7 @@
               libpng = final.pkg-mod-libpng;
               libtiff = final.pkg-mod-libtiff;
               libgeotiff = final.pkg-mod-libgeotiff;
+              libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
               lz4 = final.pkg-mod-lz4;
               openssl = final.pkg-mod-openssl;
@@ -172,6 +173,7 @@
               libpng = final.pkg-mod-libpng;
               libtiff = final.pkg-mod-libtiff;
               libgeotiff = final.pkg-mod-libgeotiff;
+              libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
               lz4 = final.pkg-mod-lz4;
               openssl = final.pkg-mod-openssl;
@@ -259,6 +261,16 @@
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
               minizip = final.pkg-mod-minizip;
+            };
+
+            pkg-mod-libxml2 = final.callPackage ./pkgs/libxml2.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
+              libiconv =
+                if (stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) then
+                  final.pkg-mod-libiconv
+                else
+                  final.libiconv;
             };
 
             pkg-mod-lerc = final.callPackage ./pkgs/lerc.nix {
