@@ -21,6 +21,8 @@
               ""
             else if stdenv.hostPlatform.isStatic then
               "-musl"
+            else if stdenv.hostPlatform.isDarwin then
+              "-darwin"
             else
               "-glibc";
           suffix = if static && !(stdenv.hostPlatform.isStatic) then "-static" else "";
@@ -133,7 +135,10 @@
               lerc = final.pkg-mod-lerc;
               libdeflate = final.pkg-mod-libdeflate;
               libiconv =
-                if stdenv.hostPlatform.isWindows or false then final.pkg-mod-libiconv else final.libiconv;
+                if (stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) then
+                  final.pkg-mod-libiconv
+                else
+                  final.libiconv;
               libpng = final.pkg-mod-libpng;
               libtiff = final.pkg-mod-libtiff;
               libgeotiff = final.pkg-mod-libgeotiff;
@@ -160,7 +165,10 @@
               lerc = final.pkg-mod-lerc;
               libdeflate = final.pkg-mod-libdeflate;
               libiconv =
-                if stdenv.hostPlatform.isWindows or false then final.pkg-mod-libiconv else final.libiconv;
+                if (stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) then
+                  final.pkg-mod-libiconv
+                else
+                  final.libiconv;
               libpng = final.pkg-mod-libpng;
               libtiff = final.pkg-mod-libtiff;
               libgeotiff = final.pkg-mod-libgeotiff;

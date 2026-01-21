@@ -121,7 +121,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "BUILD_APPS" buildTools)
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
-  ++ lib.optionals (stdenv.hostPlatform.isWindows && static) [
+  ++ lib.optionals ((stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) && static) [
     # Force CMake to use the static iconv library instead of the dynamic one
     "-DIconv_INCLUDE_DIR=${lib.getDev libiconv}/include"
     "-DIconv_LIBRARY=${lib.getLib libiconv}/lib/libiconv.a"
@@ -209,12 +209,14 @@ stdenv.mkDerivation (finalAttrs: {
   NIX_CFLAGS_LINK = if static && stdenv.cc.isGNU then " -static-libgcc -static-libstdc++" else "";
 
   # the dynamic libiconv package is also present in the environment, so force linking against the static one if needed
-  postInstall = lib.optionalString (stdenv.hostPlatform.isWindows && static) ''
-    # Fix pkg-config file to include static libiconv library path
-    if [ -f "$out/lib/pkgconfig/gdal.pc" ]; then
-      sed -i "s|-liconv -lcharset|-L${libiconv}/lib -liconv -lcharset|g" "$out/lib/pkgconfig/gdal.pc"
-    fi
-  '';
+  postInstall =
+    lib.optionalString ((stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) && static)
+      ''
+        # Fix pkg-config file to include static libiconv library path
+        if [ -f "$out/lib/pkgconfig/gdal.pc" ]; then
+          sed -i "s|-liconv\>|-L${libiconv}/lib -liconv|g" "$out/lib/pkgconfig/gdal.pc"
+        fi
+      '';
 
   enableParallelBuilding = true;
   doInstallCheck = false;
