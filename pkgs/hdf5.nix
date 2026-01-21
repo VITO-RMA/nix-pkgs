@@ -83,6 +83,7 @@ stdenv.mkDerivation rec {
   ++ lib.optional stdenv.hostPlatform.isDarwin "-DHDF5_BUILD_WITH_INSTALL_NAME=ON"
   # broken in nixpkgs since around 1.14.3 -> 1.14.4.3
   # https://github.com/HDFGroup/hdf5/issues/4208#issuecomment-2098698567
+  ++ lib.optional stdenv.hostPlatform.isMusl "-DHDF5_ENABLE_NONSTANDARD_FEATURE_FLOAT16=OFF"
   ++ lib.optional (
     stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64
   ) "-DHDF5_ENABLE_NONSTANDARD_FEATURE_FLOAT16=OFF";

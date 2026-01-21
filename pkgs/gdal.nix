@@ -121,6 +121,12 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "BUILD_APPS" buildTools)
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
+  ++ lib.optionals stdenv.hostPlatform.isMusl [
+    # Disable float16 support on musl since it lacks proper support
+    "-DCMAKE_C_FLAGS=-DGDAL_DISABLE_FLOAT16"
+    "-DHAVE_STD_FLOAT16_T:BOOL=OFF"
+    "-DHAVE__FLOAT16=0"
+  ]
   ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
     "-DCMAKE_SKIP_BUILD_RPATH=ON" # without, libgdal.so can't find libmariadb.so
   ]
