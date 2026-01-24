@@ -13,19 +13,30 @@
   inherit openssl;
   inherit zlib;
   inherit zstd;
-}).overrideAttrs (old: {
-  pname = mkPackageName old.pname static stdenv;
+  http3Support = false;
+  gssSupport = false;
+  pslSupport = false;
+}).overrideAttrs
+  (old: {
+    pname = mkPackageName old.pname static stdenv;
 
-  buildInputs = [
-    openssl
-    zlib
-    zstd
-  ];
-
-  configureFlags =
-    (old.configureFlags or [ ])
-    ++ lib.optionals static [
-      "--enable-static"
-      "--disable-shared"
+    buildInputs = [
+      openssl
+      zlib
+      zstd
     ];
-})
+
+    preConfigure =
+      (old.preConfigure or "")
+      + lib.optionalString static ''
+        export PKG_CONFIG_ALL_STATIC=1
+        export PKG_CONFIG="${stdenv.cc.targetPrefix}pkg-config --static"
+      '';
+
+    configureFlags =
+      (old.configureFlags or [ ])
+      ++ lib.optionals static [
+        "--enable-static"
+        "--disable-shared"
+      ];
+  })

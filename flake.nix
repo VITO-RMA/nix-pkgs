@@ -133,8 +133,8 @@
               useArrow = false; # arrow doesn't support static builds well
               useCurl = false; # curl dependencies don't support Windows
               useQhull = false; # qhull doesn't support Windows
-              useCBlosc = false; # c-blosc fails to compile on Windows
-              usePostgres = !stdenv.hostPlatform.isWindows; # enable PostgreSQL everywhere except Windows
+              useCBlosc = false; # c-blosc fails to compile on Windows enable PostgreSQL everywhere except Windows
+              usePostgres = false;
               curl = final.pkg-mod-curl;
               cryptopp = final.pkg-mod-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
@@ -153,7 +153,7 @@
                 else
                   final.libiconv;
               libpng = final.pkg-mod-libpng;
-              libpq = final.pkg-mod-libpq;
+              #libpq = final.pkg-mod-libpq;
               libtiff = final.pkg-mod-libtiff;
               libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
@@ -188,7 +188,7 @@
                 else
                   final.libiconv;
               libpng = final.pkg-mod-libpng;
-              libpq = final.pkg-mod-libpq;
+              #libpq = final.pkg-mod-libpq;
               libtiff = final.pkg-mod-libtiff;
               libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
@@ -271,12 +271,12 @@
               zlib = final.pkg-mod-zlib-compat;
             };
 
-            pkg-mod-libpq = final.callPackage ./pkgs/libpq.nix {
-              inherit static stdenv mkPackageName;
-              zlib = final.pkg-mod-zlib-compat;
-              openssl = final.pkg-mod-openssl;
-              tzdata = final.tzdata;
-            };
+            # pkg-mod-libpq = final.callPackage ./pkgs/libpq.nix {
+            #   inherit static stdenv mkPackageName;
+            #   zlib = final.pkg-mod-zlib-compat;
+            #   openssl = final.pkg-mod-openssl;
+            #   tzdata = final.tzdata;
+            # };
 
             pkg-mod-libtiff = final.callPackage ./pkgs/libtiff.nix {
               inherit static stdenv mkPackageName;
@@ -530,8 +530,8 @@
           pkgsMingwCross = import nixpkgs {
             inherit system;
             config = {
-              strictDeps = true;
-              allowUnsupportedSystem = true;
+              # strictDeps = true;
+              # allowUnsupportedSystem = true;
             };
             crossSystem = {
               config = "x86_64-w64-mingw32";
