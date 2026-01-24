@@ -16,11 +16,10 @@
   useLibXml2 ? (!useMinimalFeatures),
   useExpat ? true, # XLSX support
   useSqlite ? true,
+  useFreexl ? (!useMinimalFeatures), # XLS support
   useNetCDF ? (!useMinimalFeatures),
   usePostgres ? (!useMinimalFeatures),
   useQhull ? (!useMinimalFeatures),
-  useTiledb ?
-    (!useMinimalFeatures) && !(stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64),
   buildTools ? (!useMinimalFeatures),
 
   armadillo,
@@ -31,6 +30,7 @@
   cmake,
   cryptopp,
   expat,
+  freexl,
   geos,
   hdf4,
   hdf5-cpp,
@@ -51,7 +51,6 @@
   proj,
   qhull,
   sqlite,
-  tiledb,
   xz,
   zlib,
   zstd,
@@ -76,6 +75,8 @@ stdenv.mkDerivation (finalAttrs: {
     tag = "v${finalAttrs.version}";
     hash = "sha256-aVl4ofBaL3RYOBPkf5s9VJvddYuOC8QtaMruZfgpACU=";
   };
+
+  patches = [ ./patches/gdal-freexl-deps.patch ];
 
   nativeBuildInputs = [
     bison
@@ -107,7 +108,6 @@ stdenv.mkDerivation (finalAttrs: {
     "-DOGR_ENABLE_DRIVER_CSV=ON"
 
     (lib.cmakeBool "GDAL_USE_CURL" useCurl)
-    (lib.cmakeBool "GDAL_USE_TILEDB" useTiledb)
     (lib.cmakeBool "GDAL_USE_BLOSC" useCBlosc)
     (lib.cmakeBool "GDAL_USE_CRYPTOPP" useCryptopp)
     (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2)
@@ -115,6 +115,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "GDAL_USE_EXPAT" useExpat)
     (lib.cmakeBool "GDAL_ENABLE_DRIVER_NETCDF" useNetCDF)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLSX" useExpat)
+    (lib.cmakeBool "OGR_ENABLE_DRIVER_XLS" useFreexl)
     (lib.cmakeBool "GDAL_USE_SQLITE3" useSqlite)
     (lib.cmakeBool "GDAL_USE_PCRE2" useSqlite) # pcre2 is only needed for the sqlite driver
     (lib.cmakeBool "OGR_ENABLE_DRIVER_GPKG" useSqlite)
@@ -136,7 +137,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildInputs =
     let
-      tileDbDeps = lib.optionals useTiledb [ tiledb ];
       postgresDeps = lib.optionals usePostgres [ libpq ];
       arrowDeps = lib.optionals useArrow [ arrow-cpp ];
       curlDeps = lib.optionals useCurl [ curl ];
@@ -148,6 +148,7 @@ stdenv.mkDerivation (finalAttrs: {
       armadilloDeps = lib.optionals useArmadillo [ armadillo ];
       libXml2Deps = lib.optionals useLibXml2 [ libxml2 ];
       expatDeps = lib.optionals useExpat [ expat ];
+      freexlDeps = lib.optionals useFreexl [ freexl ];
       sqliteDeps = lib.optionals useSqlite [
         sqlite
         pcre2
@@ -177,8 +178,8 @@ stdenv.mkDerivation (finalAttrs: {
       zlib
       zstd
     ]
+    ++ freexlDeps
     ++ expatDeps
-    ++ tileDbDeps
     ++ postgresDeps
     ++ arrowDeps
     ++ curlDeps

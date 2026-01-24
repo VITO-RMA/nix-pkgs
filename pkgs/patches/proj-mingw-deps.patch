@@ -1,0 +1,25 @@
+diff --git a/src/lib_proj.cmake b/src/lib_proj.cmake
+index 89b8f214a..29cadc8ce 100644
+--- a/src/lib_proj.cmake
++++ b/src/lib_proj.cmake
+@@ -568,11 +568,14 @@ set(PROJ_LIBRARIES proj)
+ # hack, required for test/unit
+ set(PROJ_LIBRARIES ${PROJ_LIBRARIES} PARENT_SCOPE)
+ if(WIN32)
+-target_link_libraries (proj
+-  PRIVATE
+-    shell32.lib
+-    ole32.lib
+-)
++  # Avoid exporting MSVC-style `*.lib` entries in the CMake config files when
++  # building with MinGW, since consumers may end up trying to link
++  # `-lshell32.lib` / `-lole32.lib`.
++  if(MINGW)
++    target_link_libraries(proj PRIVATE shell32 ole32)
++  else()
++    target_link_libraries(proj PRIVATE shell32.lib ole32.lib)
++  endif()
+ endif()
+ if(UNIX)
+   find_library(M_LIB m)
+   if(M_LIB)

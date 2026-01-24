@@ -9,9 +9,12 @@
   mkPackageName,
 }:
 
-curl.overrideAttrs (old: {
+(curl.override {
+  inherit openssl;
+  inherit zlib;
+  inherit zstd;
+}).overrideAttrs (old: {
   pname = mkPackageName old.pname static stdenv;
-  mingwSupport = false;
 
   buildInputs = [
     openssl

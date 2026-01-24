@@ -25,6 +25,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     ./patches/proj-libtiff.patch
+    ./patches/proj-mingw-deps.patch
   ];
 
   outputs = [

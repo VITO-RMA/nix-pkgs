@@ -114,34 +114,47 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-freexl = final.callPackage ./pkgs/freexl.nix {
+              inherit static stdenv mkPackageName;
+              expat = final.pkg-mod-expat;
+              minizip = final.pkg-mod-minizip;
+              zlib = final.pkg-mod-zlib-compat;
+              libiconv =
+                if (stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) then
+                  final.pkg-mod-libiconv
+                else
+                  final.libiconv;
+            };
+
             pkg-mod-gdal = final.callPackage ./pkgs/gdal.nix {
               inherit static stdenv mkPackageName;
               useMinimalFeatures = false;
               useArmadillo = false; # armadillo doesn't support static builds
               useArrow = false; # arrow doesn't support static builds well
-              useTiledb = false; # tiledb doesn't support Windows
-              usePostgres = false; # libpq doesn't support Windows
               useCurl = false; # curl dependencies don't support Windows
-              useNetCDF = true; # netcdf doesn't support Windows well
-              useHDF = false; # hdf doesn't support Windows well
               useQhull = false; # qhull doesn't support Windows
               useCBlosc = false; # c-blosc fails to compile on Windows
+              usePostgres = !stdenv.hostPlatform.isWindows; # enable PostgreSQL everywhere except Windows
               curl = final.pkg-mod-curl;
               cryptopp = final.pkg-mod-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
               expat = final.pkg-mod-expat;
+              freexl = final.pkg-mod-freexl;
               geos = final.pkg-mod-geos;
+              hdf4 = final.pkg-mod-hdf4;
+              hdf5-cpp = final.pkg-mod-hdf5;
               json_c = final.pkg-mod-json_c;
               lerc = final.pkg-mod-lerc;
               libdeflate = final.pkg-mod-libdeflate;
+              libgeotiff = final.pkg-mod-libgeotiff;
               libiconv =
                 if (stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) then
                   final.pkg-mod-libiconv
                 else
                   final.libiconv;
               libpng = final.pkg-mod-libpng;
+              libpq = final.pkg-mod-libpq;
               libtiff = final.pkg-mod-libtiff;
-              libgeotiff = final.pkg-mod-libgeotiff;
               libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
               lz4 = final.pkg-mod-lz4;
@@ -161,18 +174,22 @@
               cryptopp = final.pkg-mod-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
               expat = final.pkg-mod-expat;
+              freexl = final.pkg-mod-freexl;
               geos = final.pkg-mod-geos;
+              hdf4 = final.pkg-mod-hdf4;
+              hdf5-cpp = final.pkg-mod-hdf5;
               json_c = final.pkg-mod-json_c;
               lerc = final.pkg-mod-lerc;
               libdeflate = final.pkg-mod-libdeflate;
+              libgeotiff = final.pkg-mod-libgeotiff;
               libiconv =
                 if (stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) then
                   final.pkg-mod-libiconv
                 else
                   final.libiconv;
               libpng = final.pkg-mod-libpng;
+              libpq = final.pkg-mod-libpq;
               libtiff = final.pkg-mod-libtiff;
-              libgeotiff = final.pkg-mod-libgeotiff;
               libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
               lz4 = final.pkg-mod-lz4;
@@ -191,6 +208,12 @@
 
             pkg-mod-gtest = final.callPackage ./pkgs/gtest.nix {
               inherit static stdenv mkPackageName;
+            };
+
+            pkg-mod-hdf4 = final.callPackage ./pkgs/hdf4.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
+              libjpeg = final.pkg-mod-libjpeg;
             };
 
             pkg-mod-hdf5 = final.callPackage ./pkgs/hdf5.nix {
@@ -246,6 +269,13 @@
             pkg-mod-libpng = final.callPackage ./pkgs/libpng.nix {
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
+            };
+
+            pkg-mod-libpq = final.callPackage ./pkgs/libpq.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
+              openssl = final.pkg-mod-openssl;
+              tzdata = final.tzdata;
             };
 
             pkg-mod-libtiff = final.callPackage ./pkgs/libtiff.nix {
@@ -499,7 +529,10 @@
           # Cross-compiled static libraries for MinGW (x86_64-w64-mingw32)
           pkgsMingwCross = import nixpkgs {
             inherit system;
-            config.strictDeps = true;
+            config = {
+              strictDeps = true;
+              allowUnsupportedSystem = true;
+            };
             crossSystem = {
               config = "x86_64-w64-mingw32";
               useLLVM = llvm;
