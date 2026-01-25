@@ -13,9 +13,6 @@ let
   '';
 in
 mcfgthreads.overrideAttrs (old: rec {
-  # patches = (old.patches or [ ]) ++ [
-  #   ./patches/mcfgthreads-default-win32-winnt.patch
-  # ];
   version = "2.1.1";
   src = fetchFromGitHub {
     owner = "lhmouse";
@@ -42,4 +39,12 @@ mcfgthreads.overrideAttrs (old: rec {
   nativeBuildInputs = old.nativeBuildInputs ++ [
     dllTool
   ];
+
+  postInstall =
+    (old.postInstall or "")
+    + lib.optionalString static ''
+      rm -f $out/bin/libmcfgthread*.dll
+      rm -f $out/lib/libmcfgthread*.dll.a
+      rm -f $dev/lib/libmcfgthread*.dll.a
+    '';
 })
