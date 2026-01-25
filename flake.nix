@@ -610,7 +610,7 @@
                 nil
                 nixfmt-rfc-style
               ]
-              ++ (if pkgs.system == "aarch64-darwin" then [ ] else [ gdb ]);
+              ++ (if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then [ ] else [ gdb ]);
           };
         }
       );
