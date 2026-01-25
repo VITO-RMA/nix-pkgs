@@ -157,7 +157,7 @@
                 else
                   final.libiconv;
               libpng = final.pkg-mod-libpng;
-              #libpq = final.pkg-mod-libpq;
+              libpq = final.pkg-mod-libpq;
               libtiff = final.pkg-mod-libtiff;
               libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
@@ -192,7 +192,7 @@
                 else
                   final.libiconv;
               libpng = final.pkg-mod-libpng;
-              #libpq = final.pkg-mod-libpq;
+              libpq = final.pkg-mod-libpq;
               libtiff = final.pkg-mod-libtiff;
               libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
@@ -275,12 +275,12 @@
               zlib = final.pkg-mod-zlib-compat;
             };
 
-            # pkg-mod-libpq = final.callPackage ./pkgs/libpq.nix {
-            #   inherit static stdenv mkPackageName;
-            #   zlib = final.pkg-mod-zlib-compat;
-            #   openssl = final.pkg-mod-openssl;
-            #   tzdata = final.tzdata;
-            # };
+            pkg-mod-libpq = final.callPackage ./pkgs/libpq.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
+              openssl = final.pkg-mod-openssl;
+              tzdata = final.tzdata;
+            };
 
             pkg-mod-libtiff = final.callPackage ./pkgs/libtiff.nix {
               inherit static stdenv mkPackageName;
