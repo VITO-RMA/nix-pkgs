@@ -16,6 +16,10 @@
   http3Support = false;
   gssSupport = false;
   pslSupport = false;
+  scpSupport = false;
+  idnSupport = false;
+  ldapSupport = false;
+  rtmpSupport = false;
 }).overrideAttrs
   (old: {
     pname = mkPackageName old.pname static stdenv;

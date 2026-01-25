@@ -15,6 +15,7 @@
   inherit zlib;
   curlSupport = false;
   gssSupport = false;
+  nlsSupport = false;
 }).overrideAttrs
   (old: {
     pname = mkPackageName old.pname static stdenv;
