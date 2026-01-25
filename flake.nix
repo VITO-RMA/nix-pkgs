@@ -47,20 +47,31 @@
           else
             let
               buildPkgs = prev.buildPackages;
+              staticLinkFlagsHook = ''
+                cat <<EOF >> $out/nix-support/setup-hook
+                export NIX_CFLAGS_LINK="$NIX_CFLAGS_LINK -static-libgcc -static-libstdc++"
+                EOF
+              '';
               gccWin32 = buildPkgs.wrapCCWith {
                 cc = buildPkgs.gcc-unwrapped.override {
-                  # if you still want this:
+                  # Uss win32 threads instead of posix mcfgthread:
                   # threadsCross = {
                   #   model = "win32";
                   #   package = null;
                   # };
                 };
+                extraBuildCommands = staticLinkFlagsHook;
               };
 
-              stdenvWin = prev.overrideCC baseStdenv gccWin32;
+              stdenvWinBase = prev.overrideCC baseStdenv gccWin32;
+              stdenvWin = stdenvWinBase // {
+                hostPlatform = stdenvWinBase.hostPlatform // {
+                  isStatic = true;
+                };
+              };
             in
             {
-              # make this the stdenv for MinGW target12s
+              # make this the stdenv for MinGW targets
               stdenv = stdenvWin;
             };
 
