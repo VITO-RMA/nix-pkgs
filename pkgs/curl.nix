@@ -5,6 +5,7 @@
   openssl,
   zlib,
   zstd,
+  brotli,
   static ? stdenv.hostPlatform.isStatic,
   mkPackageName,
 }:
@@ -13,6 +14,9 @@
   inherit openssl;
   inherit zlib;
   inherit zstd;
+  inherit brotli;
+  c-aresSupport = false;
+  http2Support = false;
   http3Support = false;
   gssSupport = false;
   pslSupport = false;
@@ -28,6 +32,7 @@
       openssl
       zlib
       zstd
+      brotli
     ];
 
     preConfigure =

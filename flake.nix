@@ -82,6 +82,9 @@
             stdenv = prev.stdenv;
           in
           {
+            pkg-mod-brotli = final.callPackage ./pkgs/brotli.nix {
+              inherit static stdenv mkPackageName;
+            };
 
             pkg-mod-cryptopp = final.callPackage ./pkgs/cryptopp.nix {
               inherit static stdenv mkPackageName;
@@ -89,6 +92,7 @@
 
             pkg-mod-curl = final.callPackage ./pkgs/curl.nix {
               inherit static stdenv mkPackageName;
+              brotli = final.pkg-mod-brotli;
               openssl = final.pkg-mod-openssl;
               zlib = final.pkg-mod-zlib-compat;
               zstd = final.pkg-mod-zstd;

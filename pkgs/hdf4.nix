@@ -11,7 +11,6 @@
 }:
 
 (hdf4.override {
-  # Match upstream override arg casing (nixpkgs pkgs/by-name/hd/hdf4/package.nix).
   netcdfSupport = netcdfSupport;
   fortranSupport = fortranSupport;
   szipSupport = false;
