@@ -93,10 +93,13 @@
             stdenv = prev.stdenv;
           in
           {
-            pkg-mod-brotli = final.callPackage ./pkgs/brotli.nix {
+            pkg-mod-benchmark = final.callPackage ./pkgs/benchmark.nix {
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-brotli = final.callPackage ./pkgs/brotli.nix {
+              inherit static stdenv mkPackageName;
+            };
             pkg-mod-cryptopp = final.callPackage ./pkgs/cryptopp.nix {
               inherit static stdenv mkPackageName;
             };
