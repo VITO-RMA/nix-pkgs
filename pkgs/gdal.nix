@@ -21,6 +21,7 @@
   usePostgres ? (!useMinimalFeatures),
   useQhull ? (!useMinimalFeatures),
   buildTools ? (!useMinimalFeatures),
+  useGrib ? (!useMinimalFeatures),
 
   armadillo,
   arrow-cpp,
@@ -114,6 +115,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "GDAL_USE_QHULL" useQhull)
     (lib.cmakeBool "GDAL_USE_EXPAT" useExpat)
     (lib.cmakeBool "GDAL_ENABLE_DRIVER_NETCDF" useNetCDF)
+    (lib.cmakeBool "GDAL_ENABLE_DRIVER_GRIB" useGrib)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLSX" useExpat)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLS" useFreexl)
     (lib.cmakeBool "GDAL_USE_SQLITE3" useSqlite)
