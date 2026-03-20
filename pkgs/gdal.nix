@@ -67,14 +67,13 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = mkPackageName ("gdal" + lib.optionalString useMinimalFeatures "-minimal") static stdenv;
-  #version = "3.12.0";
-  version = "3.11.5";
+  version = "3.12.2";
 
   src = fetchFromGitHub {
     owner = "OSGeo";
     repo = "gdal";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-aVl4ofBaL3RYOBPkf5s9VJvddYuOC8QtaMruZfgpACU=";
+    hash = "sha256-W9MSZP+qmG7r2SzjOXbeYebY5vx8z8cpySv/sGyj42Y=";
   };
 
   patches = [ ./patches/gdal-freexl-deps.patch ];
