@@ -359,6 +359,12 @@
               netcdf = final.pkg-mod-netcdf;
             };
 
+            pkg-mod-netcdf-fortran = final.callPackage ./pkgs/netcdf-fortran.nix {
+              inherit static stdenv mkPackageName;
+              hdf5 = final.pkg-mod-hdf5;
+              netcdf = final.pkg-mod-netcdf;
+            };
+
             pkg-mod-onetbb = final.callPackage ./pkgs/onetbb.nix {
               inherit static stdenv mkPackageName;
               hwloc = final.pkg-mod-hwloc;
