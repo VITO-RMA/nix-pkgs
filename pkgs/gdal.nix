@@ -160,9 +160,7 @@ stdenv.mkDerivation (finalAttrs: {
 
       mingwDeps = lib.optionals stdenv.hostPlatform.isWindows [ libiconv ];
       darwinDeps = lib.optionals stdenv.hostPlatform.isDarwin [ libiconv ];
-      nonDarwinDeps = lib.optionals (!stdenv.hostPlatform.isDarwin) [
-        arrowDeps
-      ];
+
     in
     [
       libgeotiff
@@ -193,8 +191,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ sqliteDeps
     ++ qhullDeps
     ++ mingwDeps
-    ++ darwinDeps
-    ++ nonDarwinDeps;
+    ++ darwinDeps;
 
   propagatedBuildInputs = finalAttrs.buildInputs;
 
