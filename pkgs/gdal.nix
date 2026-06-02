@@ -67,13 +67,13 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = mkPackageName ("gdal" + lib.optionalString useMinimalFeatures "-minimal") static stdenv;
-  version = "3.12.2";
+  version = "3.12.4";
 
   src = fetchFromGitHub {
     owner = "OSGeo";
     repo = "gdal";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-W9MSZP+qmG7r2SzjOXbeYebY5vx8z8cpySv/sGyj42Y=";
+    hash = "sha256-sD/ZAOvMWK2+AGw6wgziDsheH+hwUwhd7i2f65cjFKg=";
   };
 
   patches = [ ./patches/gdal-freexl-deps.patch ];
@@ -139,7 +139,7 @@ stdenv.mkDerivation (finalAttrs: {
   buildInputs =
     let
       postgresDeps = lib.optionals usePostgres [ libpq ];
-      arrowDeps = lib.optionals useArrow [ arrow-cpp ];
+      arrowDeps = lib.optionals (useArrow && !stdenv.hostPlatform.isDarwin) [ arrow-cpp ];
       curlDeps = lib.optionals useCurl [ curl ];
       hdfDeps = lib.optionals useHDF [
         hdf4
