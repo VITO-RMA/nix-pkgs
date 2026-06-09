@@ -296,6 +296,11 @@
               tzdata = final.tzdata;
             };
 
+            pkg-mod-libpqxx = final.callPackage ./pkgs/libpqxx.nix {
+              inherit static stdenv mkPackageName;
+              libpq = final.pkg-mod-libpq;
+            };
+
             pkg-mod-libtiff = final.callPackage ./pkgs/libtiff.nix {
               inherit static stdenv mkPackageName;
               lerc = final.pkg-mod-lerc;
