@@ -632,8 +632,8 @@
             packages =
               with pkgs;
               [
-                nil
-                nixfmt-rfc-style
+                nixd
+                nixfmt
               ]
               ++ (if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then [ ] else [ gdb ]);
           };
