@@ -147,12 +147,9 @@
             pkg-mod-gdal = final.callPackage ./pkgs/gdal.nix {
               inherit static stdenv mkPackageName;
               useMinimalFeatures = false;
-              useArmadillo = false; # armadillo doesn't support static builds
-              useArrow = false; # arrow doesn't support static builds well
-              useCurl = true;
-              useQhull = true;
-              useCBlosc = false; # c-blosc fails to compile on Windows enable PostgreSQL everywhere except Windows
-              usePostgres = true;
+              useArmadillo = false; # currently not needed in our builds
+              useArrow = false; # currently not added because of additional dependency count
+              useCBlosc = false; # currently not needed, required when zarr support is needed
               curl = final.pkg-mod-curl;
               qhull = final.pkg-mod-qhull;
               cryptopp = final.pkg-mod-cryptopp;
