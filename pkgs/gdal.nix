@@ -108,6 +108,14 @@ stdenv.mkDerivation (finalAttrs: {
     "-DOGR_ENABLE_DRIVER_CSV=ON"
 
     (lib.cmakeBool "GDAL_USE_CURL" useCurl)
+  ]
+  ++ lib.optionals (useCurl && static) [
+    # GDAL's FindCURL.cmake tries curl's own CMake config first, which doesn't
+    # expose curl's transitive static deps (brotli, zstd, etc.). Falling through
+    # to pkg-config at least gets the discovery hints right.
+    "-DCURL_NO_CURL_CMAKE=ON"
+  ]
+  ++ [
     (lib.cmakeBool "GDAL_USE_BLOSC" useCBlosc)
     (lib.cmakeBool "GDAL_USE_CRYPTOPP" useCryptopp)
     (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2)
@@ -198,6 +206,12 @@ stdenv.mkDerivation (finalAttrs: {
   NIX_CFLAGS_COMPILE = lib.optionalString (
     stdenv.hostPlatform.isWindows && static && useSqlite
   ) "-DPCRE2_STATIC";
+
+  # FindCURL.cmake uses pkg-config only for discovery hints (include/library
+  # dirs), not for link flags — the CURL::libcurl imported target is created
+  # with just libcurl.a and no INTERFACE_LINK_LIBRARIES for transitive deps.
+  # In static builds curl links brotli, so we must supply those explicitly.
+  NIX_LDFLAGS = lib.optionalString (static && useCurl) "-lbrotlidec -lbrotlicommon";
 
   enableParallelBuilding = true;
   doInstallCheck = false;
