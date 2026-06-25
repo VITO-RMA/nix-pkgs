@@ -152,7 +152,7 @@
               useCurl = true;
               useQhull = true;
               useCBlosc = false; # c-blosc fails to compile on Windows enable PostgreSQL everywhere except Windows
-              usePostgres = false;
+              usePostgres = true;
               curl = final.pkg-mod-curl;
               qhull = final.pkg-mod-qhull;
               cryptopp = final.pkg-mod-cryptopp;
