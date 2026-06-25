@@ -150,10 +150,11 @@
               useArmadillo = false; # armadillo doesn't support static builds
               useArrow = false; # arrow doesn't support static builds well
               useCurl = !stdenv.hostPlatform.isWindows; # curl dependencies don't support Windows
-              useQhull = false; # qhull doesn't support Windows
+              useQhull = true;
               useCBlosc = false; # c-blosc fails to compile on Windows enable PostgreSQL everywhere except Windows
               usePostgres = false;
               curl = final.pkg-mod-curl;
+              qhull = final.pkg-mod-qhull;
               cryptopp = final.pkg-mod-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
               expat = final.pkg-mod-expat;
@@ -189,6 +190,7 @@
               inherit static stdenv mkPackageName;
               useMinimalFeatures = true;
               curl = final.pkg-mod-curl;
+              qhull = final.pkg-mod-qhull;
               cryptopp = final.pkg-mod-cryptopp;
               c-blosc = final.c-blosc; # not overridden here yet
               expat = final.pkg-mod-expat;
@@ -387,6 +389,10 @@
             pkg-mod-proj = final.callPackage ./pkgs/proj.nix {
               inherit static stdenv mkPackageName;
               sqlite = final.pkg-mod-sqlite;
+            };
+
+            pkg-mod-qhull = final.callPackage ./pkgs/qhull.nix {
+              inherit static stdenv mkPackageName;
             };
 
             pkg-mod-reproc = final.callPackage ./pkgs/reproc.nix {
