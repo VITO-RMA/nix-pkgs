@@ -149,7 +149,7 @@
               useMinimalFeatures = false;
               useArmadillo = false; # armadillo doesn't support static builds
               useArrow = false; # arrow doesn't support static builds well
-              useCurl = !stdenv.hostPlatform.isWindows; # curl dependencies don't support Windows
+              useCurl = true;
               useQhull = true;
               useCBlosc = false; # c-blosc fails to compile on Windows enable PostgreSQL everywhere except Windows
               usePostgres = false;
