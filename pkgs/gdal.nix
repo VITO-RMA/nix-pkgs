@@ -22,6 +22,7 @@
   useQhull ? (!useMinimalFeatures),
   buildTools ? (!useMinimalFeatures),
   useGrib ? (!useMinimalFeatures),
+  usePcRaster ? (!useMinimalFeatures),
 
   armadillo,
   arrow-cpp,
@@ -113,6 +114,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2)
     (lib.cmakeBool "GDAL_USE_QHULL" useQhull)
     (lib.cmakeBool "GDAL_USE_EXPAT" useExpat)
+    (lib.cmakeBool "GDAL_ENABLE_DRIVER_PCRASTER" usePcRaster)
     (lib.cmakeBool "GDAL_ENABLE_DRIVER_NETCDF" useNetCDF)
     (lib.cmakeBool "GDAL_ENABLE_DRIVER_GRIB" useGrib)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLSX" useExpat)
