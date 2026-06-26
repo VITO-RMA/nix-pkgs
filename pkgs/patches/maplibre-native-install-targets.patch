@@ -1,0 +1,25 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 9a680480d448..b0bae659f98b 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1287,8 +1287,19 @@ else()
+     message(FATAL_ERROR "Unsupported target platform: " ${CMAKE_SYSTEM_NAME})
+ endif()
+ 
++if (MLN_WITH_TESTS)
+ add_subdirectory(${PROJECT_SOURCE_DIR}/test)
+ add_subdirectory(${PROJECT_SOURCE_DIR}/benchmark)
+ add_subdirectory(${PROJECT_SOURCE_DIR}/render-test)
++endif()
+ 
+ include(cmake/mbgl-core-deps.cmake)
++
++install(
++    TARGETS ${EXPORT_TARGETS}
++    EXPORT MapboxCoreTargets
++    RUNTIME DESTINATION bin
++    LIBRARY DESTINATION lib
++    ARCHIVE DESTINATION lib
++    INCLUDES DESTINATION include
++)
+\ No newline at end of file

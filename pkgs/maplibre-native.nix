@@ -3,6 +3,7 @@
   stdenv,
   fetchgit,
   cmake,
+  pkg-config,
   static ? stdenv.hostPlatform.isStatic,
   mkPackageName,
   sqlite,
@@ -20,18 +21,19 @@ stdenv.mkDerivation rec {
 
   src = fetchgit {
     url = "https://github.com/maplibre/maplibre-native.git";
-    rev = "android-v10.1.0";
-    hash = "sha256-dSzHYJ/1GpY1S/kruu8rw4qP+xO17xlZPEv52sHnCuA=";
+    rev = "android-v13.3.1";
+    hash = "sha256-TsBIg3ociClmo9PjZdMgUBjZosi9IDr6NRnAHbHgQQU=";
     fetchSubmodules = true;
   };
 
   patches = [
-    ./patches/maplibre-native-cmake-config.patch
-    ./patches/maplibre-native-cmake.patch
-    ./patches/maplibre-native-boost-numeric.patch
-    ./patches/maplibre-native-timer-overflow.patch
-    ./patches/maplibre-native-http2.patch
-    ./patches/maplibre-native-fix-includes.patch
+    # ./patches/maplibre-native-cmake-config.patch
+    # ./patches/maplibre-native-cmake.patch
+    # ./patches/maplibre-native-boost-numeric.patch
+    # ./patches/maplibre-native-timer-overflow.patch
+    # ./patches/maplibre-native-http2.patch
+    # ./patches/maplibre-native-fix-includes.patch
+    ./patches/maplibre-native-install-targets.patch
   ];
 
   # postPatch = ''
@@ -41,6 +43,7 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [
     cmake
+    pkg-config
   ];
 
   buildInputs = [
@@ -54,13 +57,13 @@ stdenv.mkDerivation rec {
 
   cmakeFlags = [
     "-DMLN_WITH_RTTI=ON"
+    "-DMLN_WITH_OPENGL=ON"
     "-DMLN_WITH_COVERAGE=OFF"
     "-DMLN_WITH_WERROR=OFF"
     "-DMLN_WITH_QT=ON"
     "-DMLN_QT_LIBRARY_ONLY=ON"
     "-DMLN_QT_WITH_INTERNAL_SQLITE=ON" # this actually used the sqlite from buildInputs (just not the one from qtsql)
     "-DMLN_QT_WITH_INTERNAL_ICU=OFF"
-    "-DMLN_QT_STATIC=ON"
     #(lib.cmakeBool "MLN_QT_STATIC" static)
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ];
