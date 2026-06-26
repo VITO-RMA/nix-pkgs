@@ -637,6 +637,7 @@
               [
                 nixd
                 nixfmt
+                nix-output-monitor
               ]
               ++ (if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then [ ] else [ gdb ]);
           };
