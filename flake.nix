@@ -383,6 +383,16 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-pcraster = final.callPackage ./pkgs/pcraster.nix {
+              inherit static stdenv mkPackageName;
+              gdal = final.pkg-mod-gdal;
+              qt6 = final.qt6;
+              boost = final.boost;
+              xerces-c = final.xercesc;
+              ncurses = final.ncurses;
+              python3 = final.python3;
+            };
+
             pkg-mod-proj = final.callPackage ./pkgs/proj.nix {
               inherit static stdenv mkPackageName;
               sqlite = final.pkg-mod-sqlite;
@@ -495,6 +505,7 @@
               name:
               nixpkgs.lib.hasPrefix "pkg-mod-" name
               && name != "pkg-mod-maplibre-native"
+              && name != "pkg-mod-pcraster"
               && (
                 if requireMingwSupport then
                   let
