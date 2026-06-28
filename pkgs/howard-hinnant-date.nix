@@ -12,6 +12,14 @@
     pname = mkPackageName old.pname static stdenv;
     doCheck = false;
 
+    postPatch = (old.postPatch or "") + ''
+      substituteInPlace CMakeLists.txt \
+        --replace-fail \
+          'if( WIN32 AND NOT CYGWIN)' \
+          'if( WIN32 AND NOT MINGW)'
+    '';
+    postInstall = ""; # upstream postInstall expects CMake/ dir that no longer exists
+
     cmakeFlags = [
       "-DBUILD_TZ_LIB=ON"
       "-DUSE_SYSTEM_TZ_DB=ON"
