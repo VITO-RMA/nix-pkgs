@@ -133,6 +133,17 @@ qtbase.overrideAttrs (old: {
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
   ++ tlsFlags
+  ++ lib.optionals isDarwin [
+    # Match the upstream nixpkgs qtbase Darwin flags. Overriding cmakeFlags
+    # wholesale drops them, and without these the configure step tries to run
+    # `xcrun xcodebuild -version` to determine the Xcode version — which fails
+    # in the Nix sandbox ("Can't determine Xcode version. Is Xcode installed?").
+    "-DQT_FEATURE_rpath=OFF"
+    "-DQT_NO_XCODE_MIN_VERSION_CHECK=ON"
+    # Only used by the (now disabled) min-version check. Setting it prevents
+    # cmake from shelling out to xcodebuild to query the version.
+    "-DQT_INTERNAL_XCODE_VERSION=0.1"
+  ]
   ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform && qtbaseNative != null) [
     "-DQT_HOST_PATH=${qtbaseNative}"
   ]
