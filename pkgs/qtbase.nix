@@ -15,6 +15,13 @@
   libpng ? null,
   libjpeg ? null,
   gui ? !stdenv.hostPlatform.isMusl,
+  withWayland ? gui && stdenv.hostPlatform.isLinux,
+  # Wayland QPA stack. Linked dynamically on Linux GUI builds; null elsewhere.
+  wayland ? null,
+  wayland-scanner ? null,
+  libxkbcommon ? null,
+  libdrm ? null,
+  libgbm ? null,
   # Desktop OpenGL implementation.
   #  • Linux : the NixOS GL stack (libglvnd). The vendor driver is loaded at
   #            runtime from /run/opengl-driver/lib, so we only link the
@@ -25,8 +32,18 @@
 }:
 
 let
-  inherit (stdenv.hostPlatform) isMinGW isLinux isDarwin;
-  openglSupport = gui && (isLinux || isMinGW);
+  inherit (stdenv.hostPlatform)
+    isMinGW
+    isLinux
+    isDarwin
+    isx86_64
+    ;
+  # Desktop OpenGL is available on Linux (libglvnd), MinGW (opengl32 from the
+  # toolchain) and Darwin (the system OpenGL framework, resolved from the SDK).
+  # On Darwin it must stay enabled: a GUI build with every OpenGL backend off
+  # but without INPUT_opengl=no trips Qt's "OpenGL functionality tests failed"
+  # fatal error in src/gui/configure.cmake.
+  openglSupport = gui && (isLinux || isMinGW || isDarwin);
   qtFeature = name: enabled: "-DQT_FEATURE_${name}=${if enabled then "ON" else "OFF"}";
   tlsFlags =
     if isMinGW then
@@ -41,9 +58,13 @@ let
       ]
     else
       [ (qtFeature "openssl_linked" true) ];
+
+  # Re-override the upstream qtbase so its wayland support tracks our `gui`
+  # flag: build the wayland QPA plugin only for a GUI build on Linux.
+  qtbase' = qtbase.override { inherit withWayland; };
 in
-qtbase.overrideAttrs (old: {
-  pname = mkPackageName "qtbase-minimal" static stdenv;
+qtbase'.overrideAttrs (old: {
+  pname = mkPackageName (if gui then "qtbase" else "qtbase-headless") static stdenv;
 
   # Non-GUI dependencies needed for Core, Sql, Xml, Network, plus the GL
   # dispatch library on platforms where it comes from nixpkgs (Linux).
@@ -65,13 +86,23 @@ qtbase.overrideAttrs (old: {
   )
   ++ lib.optionals (openglSupport && libGL != null) [ libGL ];
 
-  buildInputs = [ ];
+  # Wayland QPA plugin deps. Dynamically linked on Linux GUI builds.
+  buildInputs = lib.optionals withWayland (
+    lib.filter (x: x != null) [
+      wayland
+      libxkbcommon
+      libdrm
+      libgbm
+    ]
+  );
 
-  # Drop wayland-scanner and other propagated native deps we don't need.
-  propagatedNativeBuildInputs = [ ];
+  nativeBuildInputs =
+    (old.nativeBuildInputs or [ ])
+    ++ lib.optionals withWayland (lib.filter (x: x != null) [ wayland-scanner ]);
 
   cmakeFlags = [
     "--log-level=STATUS"
+
     "-DQT_EMBED_TOOLCHAIN_COMPILER=OFF"
     "-DINSTALL_PLUGINSDIR=lib/qt-6/plugins"
     "-DINSTALL_QMLDIR=lib/qt-6/qml"
@@ -90,8 +121,9 @@ qtbase.overrideAttrs (old: {
     # ── GUI / Widgets / OpenGL stack ────────────────────────────────────
     (qtFeature "gui" gui)
     (qtFeature "widgets" gui)
-    # Desktop OpenGL (links libGL on Linux / opengl32 on MinGW). We don't
-    # build the GLES/EGL or Vulkan backends in this minimal variant.
+    # Desktop OpenGL (links libGL on Linux / opengl32 on MinGW / the system
+    # OpenGL framework on Darwin). We don't build the GLES/EGL or Vulkan
+    # backends in this variant.
     (qtFeature "opengl" openglSupport)
     (qtFeature "opengl_desktop" openglSupport)
     "-DQT_FEATURE_opengles2=OFF"
@@ -107,8 +139,8 @@ qtbase.overrideAttrs (old: {
     "-DQT_FEATURE_fontconfig=OFF"
 
     # ── Disable platform integrations ───────────────────────────────────
-    # GUI is built with only the always-available "minimal"/"offscreen"
-    # platform plugins; no real windowing system is linked.
+    # Disable windowing backends we don't need. Wayland is kept when
+    # gui + Linux so that the wayland QPA plugin is built.
     "-DQT_FEATURE_dbus=OFF"
     "-DQT_FEATURE_xcb=OFF"
     "-DQT_FEATURE_linuxfb=OFF"
@@ -119,6 +151,20 @@ qtbase.overrideAttrs (old: {
     "-DQT_FEATURE_tslib=OFF"
     "-DQT_FEATURE_cups=OFF"
     "-DQT_FEATURE_glib=OFF"
+    (qtFeature "wayland" withWayland)
+
+    # ── Cap x86 SIMD at AVX2 for reproducibility ────────────────────────
+    # Qt's configure probes the compiler for SIMD support. In a cross
+    # build the compiler can emit any extension but doesn't advertise
+    # them by default, so the tests fall back to "Basic". We fix the
+    # target arch to haswell (= SSE4.2 + AVX2 + AES-NI + F16C + …) via
+    # -march so the compile tests pass, while keeping AVX-512 out.
+  ]
+  ++ lib.optionals isx86_64 [
+    "-DCMAKE_C_FLAGS=-march=haswell"
+    "-DCMAKE_CXX_FLAGS=-march=haswell"
+  ]
+  ++ [
 
     # ── Disable extras ──────────────────────────────────────────────────
     "-DQT_FEATURE_testlib=OFF"
@@ -167,8 +213,13 @@ qtbase.overrideAttrs (old: {
 
   meta = old.meta // {
     description =
-      "Qt 6 base libraries – minimal build (Core, Sql, Xml, Network"
-      + lib.optionalString gui ", Gui, Widgets"
+      "Qt 6 base libraries – "
+      + (
+        if gui then
+          "GUI build (Core, Sql, Xml, Network, Gui, Widgets"
+        else
+          "headless build (Core, Sql, Xml, Network"
+      )
       + lib.optionalString openglSupport " + desktop OpenGL"
       + ")";
   };

@@ -393,7 +393,7 @@
             pkg-mod-pcraster = final.callPackage ./pkgs/pcraster.nix {
               inherit static stdenv mkPackageName;
               gdal = final.pkg-mod-gdal;
-              qtbase = final.pkg-mod-qtbase-minimal;
+              qtbase = final.pkg-mod-qtbase-headless;
               boost = final.pkg-mod-boost;
               xerces-c = final.pkg-mod-xerces-c;
               ncurses = final.ncurses;
@@ -409,7 +409,7 @@
               inherit static stdenv mkPackageName;
             };
 
-            pkg-mod-qtbase-minimal =
+            pkg-mod-qtbase =
               let
                 host = stdenv.hostPlatform;
                 isMinGW = (host.isMinGW or false) || (host.config or "" == "x86_64-w64-mingw32");
@@ -425,6 +425,27 @@
                 #  • musl  : null — kept headless for now.
                 guiLibGL = if (isMinGW || isMusl || host.isDarwin) then null else final.libGL;
 
+                # Wayland QPA stack, linked dynamically on glibc Linux GUI
+                # builds. Null on MinGW/Darwin/musl where it isn't used.
+                isLinuxGlibc = !(isMinGW || isMusl || host.isDarwin);
+                waylandDeps =
+                  if isLinuxGlibc then
+                    {
+                      wayland = final.wayland;
+                      wayland-scanner = final.buildPackages.wayland-scanner;
+                      libxkbcommon = final.libxkbcommon;
+                      libdrm = final.libdrm;
+                      libgbm = final.libgbm or final.mesa;
+                    }
+                  else
+                    {
+                      wayland = null;
+                      wayland-scanner = null;
+                      libxkbcommon = null;
+                      libdrm = null;
+                      libgbm = null;
+                    };
+
                 sharedDeps = {
                   openssl = final.pkg-mod-openssl;
                   pcre2 = final.pkg-mod-pcre2;
@@ -433,10 +454,12 @@
                   icu = final.pkg-mod-icu;
                 };
               in
-              final.callPackage ./pkgs/qtbase-minimal.nix (
+              final.callPackage ./pkgs/qtbase.nix (
                 sharedDeps
+                // waylandDeps
                 // {
                   inherit static stdenv mkPackageName;
+                  gui = true;
                   qtbase = final.qt6.qtbase.override (sharedDeps // { libGL = guiLibGL; });
                   qtbaseNative = final.buildPackages.qt6.qtbase;
                   sqlite = final.pkg-mod-sqlite;
@@ -445,6 +468,9 @@
                   libGL = guiLibGL;
                 }
               );
+
+            # Same build without the GUI/Widgets/OpenGL stack.
+            pkg-mod-qtbase-headless = final.pkg-mod-qtbase.override { gui = false; };
 
             pkg-mod-reproc = final.callPackage ./pkgs/reproc.nix {
               inherit static stdenv mkPackageName;
@@ -545,6 +571,7 @@
           pkgs,
           mkName ? (name: name),
           requireMingwSupport ? false,
+          excludeNames ? [ ],
         }:
 
         if pkgs == null then
@@ -555,6 +582,7 @@
               name:
               nixpkgs.lib.hasPrefix "pkg-mod-" name
               && name != "pkg-mod-maplibre-native"
+              && !(builtins.elem name excludeNames)
               && (
                 if requireMingwSupport then
                   let
@@ -686,6 +714,9 @@
               muslAttrs = forEachPkgMod {
                 pkgs = pkgsStaticMusl;
                 mkName = name: "${name}-musl-static";
+                # The GUI qtbase isn't supported on musl; only the headless
+                # variant (pkg-mod-qtbase-headless) is built there.
+                excludeNames = [ "pkg-mod-qtbase" ];
               };
 
               winAttrs = forEachPkgMod {
@@ -708,11 +739,17 @@
             packages =
               with pkgs;
               [
+                cachix
                 nixd
                 nixfmt
                 nix-output-monitor
               ]
               ++ (if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then [ ] else [ gdb ]);
+            shellHook = ''
+              if [ -f /run/secrets/geo_overlay_auth_token ]; then
+                export CACHIX_AUTH_TOKEN="$(cat /run/secrets/geo_overlay_auth_token)"
+              fi
+            '';
           };
         }
       );
