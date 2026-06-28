@@ -746,9 +746,11 @@
               ]
               ++ (if pkgs.stdenv.hostPlatform.system == "aarch64-darwin" then [ ] else [ gdb ]);
             shellHook = ''
-              if [ -f /run/secrets/geo_overlay_auth_token ]; then
-                export CACHIX_AUTH_TOKEN="$(cat /run/secrets/geo_overlay_auth_token)"
+              geo_overlay_token="$(cat /run/secrets/cachix_geo_overlay_auth_token 2>/dev/null || true)"
+              if [ -n "$geo_overlay_token" ]; then
+                export CACHIX_AUTH_TOKEN="$geo_overlay_token"
               fi
+              unset geo_overlay_token
             '';
           };
         }

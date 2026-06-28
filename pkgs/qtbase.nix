@@ -169,6 +169,8 @@ qtbase'.overrideAttrs (old: {
     # ── Disable extras ──────────────────────────────────────────────────
     "-DQT_FEATURE_testlib=OFF"
     "-DQT_FEATURE_printsupport=OFF"
+    "-DQT_FEATURE_androiddeployqt=OFF"
+    "-DQT_FEATURE_wasmdeployqt=OFF"
     "-DQT_BUILD_EXAMPLES=OFF"
     "-DQT_BUILD_TESTS=OFF"
     "-DQT_GENERATE_SBOM=OFF"
