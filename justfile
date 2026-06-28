@@ -1,2 +1,2 @@
 test:
-    nix flake check -j2 |& nom
+    nix flake check -j2

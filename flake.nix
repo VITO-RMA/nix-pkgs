@@ -402,16 +402,24 @@
               inherit static stdenv mkPackageName;
             };
 
-            pkg-mod-qtbase-minimal = final.callPackage ./pkgs/qtbase-minimal.nix {
-              inherit static stdenv mkPackageName;
-              qtbase = final.qt6.qtbase.override { libGL = null; };
-              qtbaseNative = final.buildPackages.qt6.qtbase;
-              pcre2 = final.pkg-mod-pcre2;
-              zlib = final.pkg-mod-zlib-compat;
-              icu = final.pkg-mod-icu;
-              sqlite = final.pkg-mod-sqlite;
-              openssl = final.pkg-mod-openssl;
-            };
+            pkg-mod-qtbase-minimal =
+              let
+                sharedDeps = {
+                  openssl = final.pkg-mod-openssl;
+                  pcre2 = final.pkg-mod-pcre2;
+                  zlib = final.pkg-mod-zlib-compat;
+                  icu = final.pkg-mod-icu;
+                };
+              in
+              final.callPackage ./pkgs/qtbase-minimal.nix (
+                sharedDeps
+                // {
+                  inherit static stdenv mkPackageName;
+                  qtbase = final.qt6.qtbase.override (sharedDeps // { libGL = null; });
+                  qtbaseNative = final.buildPackages.qt6.qtbase;
+                  sqlite = final.pkg-mod-sqlite;
+                }
+              );
 
             pkg-mod-reproc = final.callPackage ./pkgs/reproc.nix {
               inherit static stdenv mkPackageName;
