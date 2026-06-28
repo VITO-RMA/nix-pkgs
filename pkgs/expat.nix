@@ -10,13 +10,13 @@
 
 stdenv.mkDerivation rec {
   pname = mkPackageName "expat" static stdenv;
-  version = "R_2_7_3";
+  version = "R_2_8_2";
 
   src = fetchFromGitHub {
     owner = "libexpat";
     repo = "libexpat";
     rev = version;
-    sha256 = "sha256-dDxnAJsj515vr9+j2Uqa9E+bB+teIBfsnrexppBtdXg=";
+    sha256 = "sha256-YNrsTYgY4gyRDpYPZPmkCTOF1eKA7rCcyfS0jR/SItY=";
   };
 
   sourceRoot = "source/expat";

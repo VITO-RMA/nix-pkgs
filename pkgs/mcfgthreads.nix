@@ -13,12 +13,12 @@ let
   '';
 in
 mcfgthreads.overrideAttrs (old: rec {
-  version = "2.1.1";
+  version = "2.4.1";
   src = fetchFromGitHub {
     owner = "lhmouse";
     repo = "mcfgthread";
     tag = "v${lib.versions.majorMinor version}-ga.${lib.versions.patch version}";
-    hash = "sha256-kEqS1+2CB/Ryor2WbI67KALnlTcD9oSFEdC6Av73roE=";
+    hash = "sha256-zQAH/Kdcl9+sSlu8WIJfNMR4KyJ+plenEa5q9rEIf/M=";
   };
 
   mesonFlags =

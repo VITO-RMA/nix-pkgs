@@ -12,18 +12,14 @@
 
 stdenv.mkDerivation rec {
   pname = mkPackageName "sqlpp11" static stdenv;
-  version = "v0.65";
+  version = "0.66";
 
   src = fetchFromGitHub {
     owner = "rbock";
     repo = "sqlpp11";
-    rev = "38e9c7efd424a0e358244e410d0426423956897d";
-    sha256 = "sha256-LFOIFaNqFgqEI1eVrgING+zm32l0t8yQx0ozaiOTkhw=";
+    rev = "${version}";
+    sha256 = "sha256-dpBvcFjNhg4+9Trn00c5EPl59PvdezoLlZ4IM8fFYGo=";
   };
-
-  patches = [
-    #./patches/sqlpp11-ciso646.patch
-  ];
 
   nativeBuildInputs = [
     cmake

@@ -12,7 +12,7 @@
 
 stdenv.mkDerivation rec {
   pname = mkPackageName "sqlite" static stdenv;
-  version = "3.51.1";
+  version = "3.53.3";
 
   src = fetchurl {
     url = "https://sqlite.org/2025/sqlite-autoconf-3510100.tar.gz";

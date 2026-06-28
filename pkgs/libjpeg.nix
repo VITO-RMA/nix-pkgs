@@ -12,12 +12,12 @@
 }).overrideAttrs
   (old: rec {
     pname = mkPackageName old.pname static stdenv;
-    version = "3.1.2";
+    version = "3.1.4.1";
     src = fetchFromGitHub {
       owner = "libjpeg-turbo";
       repo = "libjpeg-turbo";
       rev = version;
-      hash = "sha256-tmeWLJxieV42f9ljSpKJoLER4QOYQLsLFC7jW54YZAk=";
+      hash = "sha256-jBajigX4/j4jG11prTPeGkTVRrRzheFL/LxgnPufzb4=";
     };
 
     patches = [ ./patches/libjpeg-mingw-boolean.patch ];
