@@ -8,6 +8,7 @@
   # Minimal dependency overrides
   pcre2,
   zlib,
+  zstd,
   icu,
   sqlite,
   openssl,
@@ -51,6 +52,7 @@ qtbase.overrideAttrs (old: {
   propagatedBuildInputs = [
     sqlite
     zlib
+    zstd
     icu
     pcre2
   ]
@@ -78,6 +80,7 @@ qtbase.overrideAttrs (old: {
     "-DQT_FEATURE_system_sqlite=ON"
     "-DQT_FEATURE_system_pcre2=ON"
     "-DQT_FEATURE_system_zlib=ON"
+    "-DQT_FEATURE_system_zstd=ON"
     "-DQT_FEATURE_icu=ON"
 
     # Use bundled copies for the rest (double-conversion, libb2, md4c, …)

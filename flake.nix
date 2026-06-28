@@ -421,6 +421,7 @@
                   openssl = final.pkg-mod-openssl;
                   pcre2 = final.pkg-mod-pcre2;
                   zlib = final.pkg-mod-zlib-compat;
+                  zstd = final.pkg-mod-zstd;
                   icu = final.pkg-mod-icu;
                 };
               in
