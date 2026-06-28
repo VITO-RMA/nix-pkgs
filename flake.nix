@@ -421,8 +421,9 @@
                 #            so we only link the dispatch library at build time.
                 #  • MinGW : null — opengl32 ships with the cross toolchain and
                 #            is picked up automatically.
+                #  • Darwin: null — OpenGL is provided by the system frameworks;
                 #  • musl  : null — kept headless for now.
-                guiLibGL = if (isMinGW || isMusl) then null else final.libGL;
+                guiLibGL = if (isMinGW || isMusl || host.isDarwin) then null else final.libGL;
 
                 sharedDeps = {
                   openssl = final.pkg-mod-openssl;
