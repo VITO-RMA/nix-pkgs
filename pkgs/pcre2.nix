@@ -16,4 +16,14 @@ pcre2.overrideAttrs (old: {
       "--enable-static"
       "--disable-shared"
     ];
+
+  # When built statically, consumers must define PCRE2_STATIC to avoid
+  # __declspec(dllimport) decorations on Windows.
+  postFixup =
+    (old.postFixup or "")
+    + lib.optionalString static ''
+      for pc in $out/lib/pkgconfig/*.pc; do
+        sed -i "s|^Cflags:|Cflags: -DPCRE2_STATIC|" "$pc"
+      done
+    '';
 })

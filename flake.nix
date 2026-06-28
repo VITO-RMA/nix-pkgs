@@ -386,11 +386,10 @@
             pkg-mod-pcraster = final.callPackage ./pkgs/pcraster.nix {
               inherit static stdenv mkPackageName;
               gdal = final.pkg-mod-gdal;
-              qt6 = final.qt6;
+              qtbase = final.pkg-mod-qtbase-minimal;
               boost = final.boost;
-              xerces-c = final.xercesc;
+              xerces-c = final.pkg-mod-xerces-c;
               ncurses = final.ncurses;
-              python3 = final.python3;
             };
 
             pkg-mod-proj = final.callPackage ./pkgs/proj.nix {
@@ -400,6 +399,17 @@
 
             pkg-mod-qhull = final.callPackage ./pkgs/qhull.nix {
               inherit static stdenv mkPackageName;
+            };
+
+            pkg-mod-qtbase-minimal = final.callPackage ./pkgs/qtbase-minimal.nix {
+              inherit static stdenv mkPackageName;
+              qtbase = final.qt6.qtbase.override { libGL = null; };
+              qtbaseNative = final.buildPackages.qt6.qtbase;
+              pcre2 = final.pkg-mod-pcre2;
+              zlib = final.pkg-mod-zlib-compat;
+              icu = final.pkg-mod-icu;
+              sqlite = final.pkg-mod-sqlite;
+              openssl = final.pkg-mod-openssl;
             };
 
             pkg-mod-reproc = final.callPackage ./pkgs/reproc.nix {
@@ -451,6 +461,12 @@
             pkg-mod-zlib-compat = final.callPackage ./pkgs/zlib-ng.nix {
               inherit static stdenv mkPackageName;
               withZlibCompat = true;
+            };
+
+            pkg-mod-xerces-c = final.callPackage ./pkgs/xerces-c.nix {
+              inherit static stdenv mkPackageName;
+              xercesc = final.xercesc;
+              icu = final.pkg-mod-icu;
             };
 
             pkg-mod-xz = final.callPackage ./pkgs/xz.nix {
@@ -505,7 +521,7 @@
               name:
               nixpkgs.lib.hasPrefix "pkg-mod-" name
               && name != "pkg-mod-maplibre-native"
-              && name != "pkg-mod-pcraster"
+              # && name != "pkg-mod-pcraster"
               && (
                 if requireMingwSupport then
                   let

@@ -8,6 +8,8 @@
   static ? stdenv.hostPlatform.isStatic,
   libiconv,
   mkPackageName,
+  cmake,
+  pkg-config,
 }:
 
 (freexl.override {
@@ -18,8 +20,9 @@
   (old: rec {
     pname = mkPackageName old.pname static stdenv;
 
-    patches = [
-      ./patches/freexl-dependencies.patch
+    nativeBuildInputs = [
+      cmake
+      pkg-config
     ];
 
     buildInputs = [
@@ -30,23 +33,27 @@
     ++ lib.optional (stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isDarwin) libiconv;
     propagatedBuildInputs = buildInputs;
 
+    # Drop autotools patches — we use our own CMakeLists.txt
+    patches = [ ];
+
+    # Replace the autotools build with our cmake-based one
+    postPatch = ''
+      mkdir -p cmake
+      cp ${./patches/freexl/CMakeLists.txt} CMakeLists.txt
+      cp ${./patches/freexl/config.h.in} cmake/config.h.in
+      cp ${./patches/freexl/freexl.pc.in} cmake/freexl.pc.in
+    '';
+
+    cmakeFlags = [
+      "-DFREEXL_ENABLE_XMLDOC=ON"
+      (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
+    ];
+
+    # Clear autotools-specific attributes
+    configureFlags = [ ];
+    preConfigure = "";
+
     doCheck = false;
-
-    # FreeXL's configure script checks for unzLocateFile by linking with
-    # -lminizip only. With static libminizip this can fail unless zlib is also
-    # on the link line (minizip.pc: Libs.private: -lz).
-    preConfigure =
-      (old.preConfigure or "")
-      + lib.optionalString static ''
-        export LIBS="$LIBS -lz"
-      '';
-
-    configureFlags =
-      (old.configureFlags or [ ])
-      ++ lib.optionals static [
-        "--enable-static"
-        "--disable-shared"
-      ];
 
     meta = old.meta // {
       platforms = lib.platforms.all;
