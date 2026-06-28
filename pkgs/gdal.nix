@@ -202,10 +202,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   propagatedBuildInputs = finalAttrs.buildInputs;
 
-  NIX_CFLAGS_COMPILE = lib.optionalString (
-    stdenv.hostPlatform.isWindows && static && useSqlite
-  ) "-DPCRE2_STATIC";
-
   enableParallelBuilding = true;
   doInstallCheck = false;
 

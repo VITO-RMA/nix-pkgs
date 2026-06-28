@@ -38,19 +38,19 @@ stdenv.mkDerivation (finalAttrs: {
   # library dependency model (--no-undefined, --as-needed, -z defs,
   # --no-copy-dt-needed-entries cause issues with indirect shared lib deps).
   postPatch = ''
-    sed -i \
-      -e 's/-Wl,--no-undefined;//g' \
-      -e 's/-Wl,--as-needed;//g' \
-      -e 's/-Wl,-z,defs;//g' \
-      -e 's/;-Wl,--no-copy-dt-needed-entries//g' \
-      environment/cmake/PCRasterCompilerConfiguration.cmake
+    substituteInPlace environment/cmake/PCRasterCompilerConfiguration.cmake \
+      --replace-all "-Wl,--no-undefined;" "" \
+      --replace-all "-Wl,--as-needed;" "" \
+      --replace-all "-Wl,-z,defs;" "" \
+      --replace-all ";-Wl,--no-copy-dt-needed-entries" ""
   ''
   + lib.optionalString (!withPython) ''
     # When building without Python bindings, downgrade Python to
     # Interpreter-only (still needed for build-time code generation)
     # and skip pybind11 entirely.
+    substituteInPlace environment/cmake/PCRasterConfiguration.cmake \
+      --replace-all "REQUIRED COMPONENTS Interpreter Development NumPy" "REQUIRED COMPONENTS Interpreter"
     sed -i \
-      -e 's/REQUIRED COMPONENTS Interpreter Development NumPy/REQUIRED COMPONENTS Interpreter/' \
       -e '/OPTIONAL_COMPONENTS Development.SABIModule/d' \
       -e '/find_package(pybind11/d' \
       environment/cmake/PCRasterConfiguration.cmake
@@ -66,34 +66,34 @@ stdenv.mkDerivation (finalAttrs: {
   + lib.optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
     # When cross-compiling, gdal_translate can't run on the build machine.
     # It's only used as a fallback to locate GDAL_DATA and for tests (disabled).
-    sed -i 's/find_program(GDAL_TRANSLATE gdal_translate REQUIRED)/find_program(GDAL_TRANSLATE gdal_translate)/' \
-      environment/cmake/PCRasterConfiguration.cmake
+    substituteInPlace environment/cmake/PCRasterConfiguration.cmake \
+      --replace-all "find_program(GDAL_TRANSLATE gdal_translate REQUIRED)" "find_program(GDAL_TRANSLATE gdal_translate)"
     # Fix 64-bit pointer cast in DynamicLibrary (HINSTANCE is 64-bit on x86_64)
-    sed -i 's/(unsigned)(d_dllHandle)/(uintptr_t)(d_dllHandle)/' \
-      source/pcrcom/com_dynamiclibrary.cc
+    substituteInPlace source/pcrcom/com_dynamiclibrary.cc \
+      --replace-all "(unsigned)(d_dllHandle)" "(uintptr_t)(d_dllHandle)"
     # MSVC's __try/__except SEH is not supported by GCC/MinGW in C++.
     # Use _MSC_VER guard instead of WIN32 so MinGW takes the no-SEH path.
-    sed -i 's/#ifndef WIN32/#ifndef _MSC_VER/' \
-      source/pcraster_model_engine/calc_linkinlibrary.cc
+    substituteInPlace source/pcraster_model_engine/calc_linkinlibrary.cc \
+      --replace-all "#ifndef WIN32" "#ifndef _MSC_VER"
   ''
   + lib.optionalString static ''
     # Remove hardcoded SHARED from internal libraries so they respect
     # BUILD_SHARED_LIBS and get built as static archives.
-    sed -i 's/add_library(pcraster_dal SHARED/add_library(pcraster_dal/' \
-      source/pcraster_dal/CMakeLists.txt
-    sed -i 's/add_library(pcraster_model_engine SHARED/add_library(pcraster_model_engine/' \
-      source/pcraster_model_engine/CMakeLists.txt
+    substituteInPlace source/pcraster_dal/CMakeLists.txt \
+      --replace-all "add_library(pcraster_dal SHARED" "add_library(pcraster_dal"
+    substituteInPlace source/pcraster_model_engine/CMakeLists.txt \
+      --replace-all "add_library(pcraster_model_engine SHARED" "add_library(pcraster_model_engine"
     # Remove dllimport decoration when linking statically
     sed -i '/PCR_DAL_SHARED_LINK/d' \
       source/pcraster_model_engine/CMakeLists.txt \
       source/pcraster_dal/CMakeLists.txt
     # When PCR_DAL_SHARED_LINK is unset, dal_Configure.h defaults PCR_DAL_DECL
     # to the literal token "error". Make it empty for static builds.
-    sed -i 's/#  define PCR_DAL_DECL error/#  define PCR_DAL_DECL/' \
-      source/pcraster_dal/dal_Configure.h
+    substituteInPlace source/pcraster_dal/dal_Configure.h \
+      --replace-all "#  define PCR_DAL_DECL error" "#  define PCR_DAL_DECL"
     # Use our XercesCConfig.cmake which propagates ICU for static builds
-    sed -i 's/find_package(XercesC REQUIRED)/find_package(XercesC CONFIG REQUIRED)/' \
-      environment/cmake/PCRasterConfiguration.cmake
+    substituteInPlace environment/cmake/PCRasterConfiguration.cmake \
+      --replace-all "find_package(XercesC REQUIRED)" "find_package(XercesC CONFIG REQUIRED)"
   '';
 
   dontWrapQtApps = true;

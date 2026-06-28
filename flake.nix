@@ -390,6 +390,7 @@
               boost = final.boost;
               xerces-c = final.pkg-mod-xerces-c;
               ncurses = final.ncurses;
+              withPython = false;
             };
 
             pkg-mod-proj = final.callPackage ./pkgs/proj.nix {
@@ -521,7 +522,6 @@
               name:
               nixpkgs.lib.hasPrefix "pkg-mod-" name
               && name != "pkg-mod-maplibre-native"
-              # && name != "pkg-mod-pcraster"
               && (
                 if requireMingwSupport then
                   let

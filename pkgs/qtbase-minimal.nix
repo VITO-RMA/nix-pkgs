@@ -84,9 +84,6 @@ qtbase.overrideAttrs (old: {
   ++ lib.optionals static [
     "-DQT_FEATURE_reduce_relocations=OFF"
     "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
-    # pcre2 static lib needs PCRE2_STATIC to avoid __declspec(dllimport)
-    "-DCMAKE_C_FLAGS=-DPCRE2_STATIC"
-    "-DCMAKE_CXX_FLAGS=-DPCRE2_STATIC"
   ];
 
   # The stock nixpkgs postFixup tries to patchelf libQt6Gui.so and the
