@@ -11,19 +11,57 @@
   icu,
   sqlite,
   openssl,
+  libpng ? null,
+  libjpeg ? null,
+  gui ? !stdenv.hostPlatform.isMusl,
+  # Desktop OpenGL implementation.
+  #  • Linux : the NixOS GL stack (libglvnd). The vendor driver is loaded at
+  #            runtime from /run/opengl-driver/lib, so we only link the
+  #            dispatch library here.
+  #  • MinGW : `null` — OpenGL (opengl32) is shipped with the cross toolchain
+  #            and is picked up automatically, so no nix package is required.
+  libGL ? null,
 }:
 
+let
+  inherit (stdenv.hostPlatform) isMinGW isLinux isDarwin;
+  openglSupport = gui && (isLinux || isMinGW);
+  qtFeature = name: enabled: "-DQT_FEATURE_${name}=${if enabled then "ON" else "OFF"}";
+  tlsFlags =
+    if isMinGW then
+      [
+        (qtFeature "schannel" true)
+        (qtFeature "openssl" false)
+      ]
+    else if isDarwin then
+      [
+        (qtFeature "securetransport" true)
+        (qtFeature "openssl" false)
+      ]
+    else
+      [ (qtFeature "openssl_linked" true) ];
+in
 qtbase.overrideAttrs (old: {
   pname = mkPackageName "qtbase-minimal" static stdenv;
 
-  # Only the non-GUI dependencies needed for Core, Sql, Xml, Network.
+  # Non-GUI dependencies needed for Core, Sql, Xml, Network, plus the GL
+  # dispatch library on platforms where it comes from nixpkgs (Linux).
+  # OpenSSL is only pulled in where it's the TLS backend; MinGW uses the
+  # OS-provided Schannel and Darwin uses SecureTransport instead.
   propagatedBuildInputs = [
-    openssl
     sqlite
     zlib
     icu
     pcre2
-  ];
+  ]
+  ++ lib.optionals (!isMinGW && !isDarwin) [ openssl ]
+  ++ lib.optionals gui (
+    lib.filter (x: x != null) [
+      libpng
+      libjpeg
+    ]
+  )
+  ++ lib.optionals (openglSupport && libGL != null) [ libGL ];
 
   buildInputs = [ ];
 
@@ -40,21 +78,34 @@ qtbase.overrideAttrs (old: {
     "-DQT_FEATURE_system_sqlite=ON"
     "-DQT_FEATURE_system_pcre2=ON"
     "-DQT_FEATURE_system_zlib=ON"
-    "-DQT_FEATURE_openssl_linked=ON"
     "-DQT_FEATURE_icu=ON"
 
     # Use bundled copies for the rest (double-conversion, libb2, md4c, …)
     "-DQT_FEATURE_system_doubleconversion=OFF"
     "-DQT_FEATURE_system_libb2=OFF"
 
-    # ── Disable the entire GUI / widgets stack ──────────────────────────
-    "-DQT_FEATURE_gui=OFF"
-    "-DQT_FEATURE_widgets=OFF"
-    "-DQT_FEATURE_opengl=OFF"
+    # ── GUI / Widgets / OpenGL stack ────────────────────────────────────
+    (qtFeature "gui" gui)
+    (qtFeature "widgets" gui)
+    # Desktop OpenGL (links libGL on Linux / opengl32 on MinGW). We don't
+    # build the GLES/EGL or Vulkan backends in this minimal variant.
+    (qtFeature "opengl" openglSupport)
+    (qtFeature "opengl_desktop" openglSupport)
     "-DQT_FEATURE_opengles2=OFF"
     "-DQT_FEATURE_vulkan=OFF"
 
+    # Keep the font stack self-contained (bundled freetype, harfbuzz) so
+    # enabling GUI doesn't pull in a windowing-system worth of dependencies,
+    # but use the system libpng / libjpeg we already build.
+    "-DQT_FEATURE_system_freetype=OFF"
+    "-DQT_FEATURE_system_harfbuzz=OFF"
+    (qtFeature "system_libpng" (gui && libpng != null))
+    (qtFeature "system_libjpeg" (gui && libjpeg != null))
+    "-DQT_FEATURE_fontconfig=OFF"
+
     # ── Disable platform integrations ───────────────────────────────────
+    # GUI is built with only the always-available "minimal"/"offscreen"
+    # platform plugins; no real windowing system is linked.
     "-DQT_FEATURE_dbus=OFF"
     "-DQT_FEATURE_xcb=OFF"
     "-DQT_FEATURE_linuxfb=OFF"
@@ -78,6 +129,7 @@ qtbase.overrideAttrs (old: {
 
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ]
+  ++ tlsFlags
   ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform && qtbaseNative != null) [
     "-DQT_HOST_PATH=${qtbaseNative}"
   ]
@@ -87,9 +139,9 @@ qtbase.overrideAttrs (old: {
   ];
 
   # The stock nixpkgs postFixup tries to patchelf libQt6Gui.so and the
-  # MySQL SQL driver — neither of which exist in this minimal build.
-  # Keep only the generic cmake / mkspecs fixups and the setup-hook
-  # substitution.
+  # MySQL SQL driver — the latter never exists in this build, and for our
+  # static builds there is no libQt6Gui.so to patch either. Keep only the
+  # generic cmake / mkspecs fixups and the setup-hook substitution.
   postFixup = ''
     moveToOutput "mkspecs/modules" "$dev"
     fixQtModulePaths "$dev/mkspecs/modules"
@@ -100,6 +152,10 @@ qtbase.overrideAttrs (old: {
   '';
 
   meta = old.meta // {
-    description = "Qt 6 base libraries – minimal headless build (Core, Sql, Xml, Network only)";
+    description =
+      "Qt 6 base libraries – minimal build (Core, Sql, Xml, Network"
+      + lib.optionalString gui ", Gui, Widgets"
+      + lib.optionalString openglSupport " + desktop OpenGL"
+      + ")";
   };
 })

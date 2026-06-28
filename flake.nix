@@ -404,6 +404,19 @@
 
             pkg-mod-qtbase-minimal =
               let
+                host = stdenv.hostPlatform;
+                isMinGW = (host.isMinGW or false) || (host.config or "" == "x86_64-w64-mingw32");
+                isMusl = host.isMusl or false;
+
+                # Desktop OpenGL provider for the GUI build:
+                #  • Linux : the NixOS GL stack (libglvnd). The vendor driver
+                #            is resolved at runtime from /run/opengl-driver/lib,
+                #            so we only link the dispatch library at build time.
+                #  • MinGW : null — opengl32 ships with the cross toolchain and
+                #            is picked up automatically.
+                #  • musl  : null — kept headless for now.
+                guiLibGL = if (isMinGW || isMusl) then null else final.libGL;
+
                 sharedDeps = {
                   openssl = final.pkg-mod-openssl;
                   pcre2 = final.pkg-mod-pcre2;
@@ -415,9 +428,12 @@
                 sharedDeps
                 // {
                   inherit static stdenv mkPackageName;
-                  qtbase = final.qt6.qtbase.override (sharedDeps // { libGL = null; });
+                  qtbase = final.qt6.qtbase.override (sharedDeps // { libGL = guiLibGL; });
                   qtbaseNative = final.buildPackages.qt6.qtbase;
                   sqlite = final.pkg-mod-sqlite;
+                  libpng = final.pkg-mod-libpng;
+                  libjpeg = final.pkg-mod-libjpeg;
+                  libGL = guiLibGL;
                 }
               );
 
