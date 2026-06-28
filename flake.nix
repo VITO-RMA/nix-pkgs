@@ -604,28 +604,41 @@
           llvm ? false,
         }:
         let
+          # MinGW cross-compilation is only supported from Linux build hosts.
+          # Darwin can't be used to cross-compile to Windows here because the
+          # toolchain pulls in `wine` as the build-time emulator, and wine is
+          # not available on (aarch64-)darwin, which makes evaluation fail.
+          isLinux = builtins.elem system [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
+
           pkgsBase = import nixpkgs {
             inherit system;
             config.strictDeps = true;
           };
 
           # Cross-compiled static libraries for MinGW (x86_64-w64-mingw32)
-          pkgsMingwCross = import nixpkgs {
-            inherit system;
-            config = {
-              # strictDeps = true;
-              # allowUnsupportedSystem = true;
-            };
-            crossSystem = {
-              config = "x86_64-w64-mingw32";
-              useLLVM = llvm;
-              #linker = if llvm then "lld" else "ld.gold";
-            };
-            overlays = [
-              mingwOverlay
-              (mkOverlay { static = true; })
-            ];
-          };
+          pkgsMingwCross =
+            if !isLinux then
+              null
+            else
+              import nixpkgs {
+                inherit system;
+                config = {
+                  # strictDeps = true;
+                  # allowUnsupportedSystem = true;
+                };
+                crossSystem = {
+                  config = "x86_64-w64-mingw32";
+                  useLLVM = llvm;
+                  #linker = if llvm then "lld" else "ld.gold";
+                };
+                overlays = [
+                  mingwOverlay
+                  (mkOverlay { static = true; })
+                ];
+              };
         in
         {
           pkgsDefault = pkgsBase;
