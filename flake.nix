@@ -97,6 +97,13 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-boost = final.callPackage ./pkgs/boost.nix {
+              inherit static stdenv mkPackageName;
+              zlib = final.pkg-mod-zlib-compat;
+              zstd = final.pkg-mod-zstd;
+              xz = final.pkg-mod-xz;
+            };
+
             pkg-mod-brotli = final.callPackage ./pkgs/brotli.nix {
               inherit static stdenv mkPackageName;
             };
@@ -387,7 +394,7 @@
               inherit static stdenv mkPackageName;
               gdal = final.pkg-mod-gdal;
               qtbase = final.pkg-mod-qtbase-minimal;
-              boost = final.boost;
+              boost = final.pkg-mod-boost;
               xerces-c = final.pkg-mod-xerces-c;
               ncurses = final.ncurses;
               withPython = false;
