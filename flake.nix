@@ -472,6 +472,11 @@
             # Same build without the GUI/Widgets/OpenGL stack.
             pkg-mod-qtbase-headless = final.pkg-mod-qtbase.override { gui = false; };
 
+            pkg-mod-qwt = final.callPackage ./pkgs/qwt.nix {
+              inherit static stdenv mkPackageName;
+              qtbase = final.pkg-mod-qtbase;
+            };
+
             pkg-mod-reproc = final.callPackage ./pkgs/reproc.nix {
               inherit static stdenv mkPackageName;
             };
@@ -716,7 +721,10 @@
                 mkName = name: "${name}-musl-static";
                 # The GUI qtbase isn't supported on musl; only the headless
                 # variant (pkg-mod-qtbase-headless) is built there.
-                excludeNames = [ "pkg-mod-qtbase" ];
+                excludeNames = [
+                  "pkg-mod-qtbase"
+                  "pkg-mod-qwt"
+                ];
               };
 
               winAttrs = forEachPkgMod {
