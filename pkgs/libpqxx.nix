@@ -61,8 +61,24 @@ stdenv.mkDerivation rec {
   cmakeFlags = [
     "-DSKIP_BUILD_TEST=ON"
     "-DBUILD_DOC=OFF"
+    # Prefer config mode so libpq's PostgreSQLConfig.cmake (full link interface)
+    # wins over CMake's bundled FindPostgreSQL.cmake (libpq.a only).
+    "-DCMAKE_FIND_PACKAGE_PREFER_CONFIG=ON"
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ];
+
+  # libpqxx's exported config re-resolves PostgreSQL at consumer-configure time
+  # via find_dependency(PostgreSQL), which defaults to MODULE mode and picks
+  # CMake's bundled FindPostgreSQL.cmake (libpq.a only).  Force CONFIG mode so
+  # consumers (weiss) transparently get libpq's full, ordered link interface
+  # (openssl, zlib, crypt32/secur32/ws2_32) without any project-side flags.
+  postFixup = lib.optionalString stdenv.hostPlatform.isWindows ''
+    cfg=$dev/lib/cmake/libpqxx/libpqxx-config.cmake
+    if [ -f "$cfg" ]; then
+      substituteInPlace "$cfg" \
+        --replace-fail 'find_dependency(PostgreSQL)' 'find_dependency(PostgreSQL CONFIG REQUIRED)'
+    fi
+  '';
 
   strictDeps = true;
 
