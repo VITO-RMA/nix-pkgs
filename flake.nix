@@ -471,7 +471,10 @@
               );
 
             # Same build without the GUI/Widgets/OpenGL stack.
-            pkg-mod-qtbase-headless = final.pkg-mod-qtbase.override { gui = false; };
+            pkg-mod-qtbase-headless = final.pkg-mod-qtbase.override {
+              gui = false;
+              cups = null;
+            };
 
             pkg-mod-qwt = final.callPackage ./pkgs/qwt.nix {
               inherit static stdenv mkPackageName;
