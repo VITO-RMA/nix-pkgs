@@ -40,7 +40,6 @@ let
     isMinGW
     isLinux
     isDarwin
-    isx86_64
     ;
   # Desktop OpenGL is available on Linux (libglvnd), MinGW (opengl32 from the
   # toolchain) and Darwin (the system OpenGL framework, resolved from the SDK).
@@ -158,19 +157,8 @@ qtbase'.overrideAttrs (old: {
     "-DQT_FEATURE_glib=OFF"
     (qtFeature "wayland" withWayland)
 
-    # ── Cap x86 SIMD at AVX2 for reproducibility ────────────────────────
-    # Qt's configure probes the compiler for SIMD support. In a cross
-    # build the compiler can emit any extension but doesn't advertise
-    # them by default, so the tests fall back to "Basic". We fix the
-    # target arch to haswell (= SSE4.2 + AVX2 + AES-NI + F16C + …) via
-    # -march so the compile tests pass, while keeping AVX-512 out.
-  ]
-  ++ lib.optionals isx86_64 [
-    "-DCMAKE_C_FLAGS=-march=haswell"
-    "-DCMAKE_CXX_FLAGS=-march=haswell"
   ]
   ++ [
-
     # ── Disable extras ──────────────────────────────────────────────────
     "-DQT_FEATURE_testlib=ON"
     (qtFeature "printsupport" gui)
