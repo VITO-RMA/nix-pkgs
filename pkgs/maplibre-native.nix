@@ -31,6 +31,7 @@ stdenv.mkDerivation rec {
     ./patches/maplibre-native-timer-overflow.patch
     ./patches/maplibre-native-http2.patch
     ./patches/maplibre-native-fix-includes.patch
+    ./patches/maplibre-native-boost-hash-unary-function.patch
   ];
 
   # postPatch = ''
