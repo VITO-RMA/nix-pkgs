@@ -348,7 +348,8 @@
               inherit static stdenv mkPackageName;
               sqlite = final.pkg-mod-sqlite;
               zlib = final.pkg-mod-zlib-compat;
-              qtbase = final.qt6.qtbase;
+              qtbase =
+                if (stdenv.hostPlatform.isWindows or false) then final.pkg-mod-qtbase else final.qt6.qtbase;
               icu = final.pkg-mod-icu;
             };
 
@@ -590,7 +591,6 @@
             names = builtins.filter (
               name:
               nixpkgs.lib.hasPrefix "pkg-mod-" name
-              && name != "pkg-mod-maplibre-native"
               && !(builtins.elem name excludeNames)
               && (
                 if requireMingwSupport then
@@ -728,6 +728,7 @@
                 excludeNames = [
                   "pkg-mod-qtbase"
                   "pkg-mod-qwt"
+                  "pkg-mod-maplibre-native"
                 ];
               };
 

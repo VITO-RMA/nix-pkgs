@@ -15,7 +15,6 @@ stdenv.mkDerivation rec {
   pname = mkPackageName "maplibre-native" static stdenv;
   version = "10.1.0";
 
-  mingwSupport = false;
   dontWrapQtApps = true;
 
   src = fetchgit {
