@@ -10,19 +10,23 @@ find_package(Qt6 OPTIONAL_COMPONENTS OpenGL OpenGLWidgets Svg)
 
 file(GLOB QWT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp)
 file(GLOB QWT_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h)
+file(GLOB QWT_CLASSINCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/classincludes/Qwt*)
 
 # qwt_plot_glcanvas is Qt5-only (uses removed QGLWidget)
 list(FILTER QWT_SOURCES EXCLUDE REGEX "qwt_plot_glcanvas")
 list(FILTER QWT_HEADERS EXCLUDE REGEX "qwt_plot_glcanvas")
+list(FILTER QWT_CLASSINCLUDES EXCLUDE REGEX "QwtPlotGLCanvas")
 
 if(NOT TARGET Qt6::Svg)
     list(FILTER QWT_SOURCES EXCLUDE REGEX "qwt_plot_svgitem")
     list(FILTER QWT_HEADERS EXCLUDE REGEX "qwt_plot_svgitem")
+    list(FILTER QWT_CLASSINCLUDES EXCLUDE REGEX "QwtPlotSvgItem")
 endif()
 
 if(NOT TARGET Qt6::OpenGLWidgets)
     list(FILTER QWT_SOURCES EXCLUDE REGEX "qwt_plot_opengl_canvas")
     list(FILTER QWT_HEADERS EXCLUDE REGEX "qwt_plot_opengl_canvas")
+    list(FILTER QWT_CLASSINCLUDES EXCLUDE REGEX "QwtPlotOpenGLCanvas")
 endif()
 
 add_library(qwt ${QWT_SOURCES} ${QWT_HEADERS})
@@ -66,7 +70,7 @@ install(TARGETS qwt EXPORT QwtTargets
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-install(FILES ${QWT_HEADERS}
+install(FILES ${QWT_HEADERS} ${QWT_CLASSINCLUDES}
     DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/qwt
 )
 
