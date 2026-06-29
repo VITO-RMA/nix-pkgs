@@ -299,7 +299,6 @@
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
               openssl = final.pkg-mod-openssl;
-              tzdata = final.tzdata;
             };
 
             pkg-mod-libpqxx = final.callPackage ./pkgs/libpqxx.nix {
