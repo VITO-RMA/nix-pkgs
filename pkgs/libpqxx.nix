@@ -47,6 +47,15 @@ stdenv.mkDerivation rec {
       --replace-fail \
         'set(includedir "''\\''${prefix}/''${CMAKE_INSTALL_INCLUDEDIR}")' \
         'set(includedir "''${CMAKE_INSTALL_FULL_INCLUDEDIR}")'
+  ''
+  # libpq's auth code (SSPI/SCRAM) needs secur32 and crypt32 on Windows.  Add
+  # them to the public Win32 link libs so they propagate to consumers (e.g.
+  # weiss) through libpqxx's exported CMake target after libpq.a.
+  + lib.optionalString stdenv.hostPlatform.isWindows ''
+    substituteInPlace src/CMakeLists.txt \
+      --replace-fail \
+        'target_link_libraries(''${tgt} PUBLIC wsock32 ws2_32)' \
+        'target_link_libraries(''${tgt} PUBLIC wsock32 ws2_32 secur32 crypt32)'
   '';
 
   cmakeFlags = [
