@@ -82,6 +82,19 @@ stdenv.mkDerivation {
 
   postInstall = ''
     rm -rf $out/share
+  ''
+  # For static builds, libpq.a is not self-contained: it references symbols
+  # (pg_encoding_to_char, pg_sprintf, strlcpy, pg_strong_random, scram_*, ...)
+  # that live in libpgcommon.a and libpgport.a.  The .pc file lists these in
+  # Libs, but downstream consumers that link libpq.a via CMake (e.g. libpqxx)
+  # only pick up -lpq, producing undefined references.  Merge the support
+  # libraries into libpq.a so it stands on its own.
+  + lib.optionalString static ''
+    pushd $out/lib
+    printf 'create libpq_merged.a\naddlib libpq.a\naddlib libpgcommon.a\naddlib libpgport.a\nsave\nend\n' | "$AR" -M
+    mv libpq_merged.a libpq.a
+    "$RANLIB" libpq.a
+    popd
   '';
 
   meta = {
