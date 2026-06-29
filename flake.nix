@@ -466,6 +466,7 @@
                   libpng = final.pkg-mod-libpng;
                   libjpeg = final.pkg-mod-libjpeg;
                   libGL = guiLibGL;
+                  cups = final.cups;
                 }
               );
 

@@ -29,6 +29,10 @@
   #  • MinGW : `null` — OpenGL (opengl32) is shipped with the cross toolchain
   #            and is picked up automatically, so no nix package is required.
   libGL ? null,
+  # CUPS — required by PrintSupport on all platforms. The Apple SDK strips
+  # its CUPS headers/stubs in favour of the nixpkgs package, so we need
+  # the nixpkgs cups everywhere.
+  cups ? null,
 }:
 
 let
@@ -84,7 +88,8 @@ qtbase'.overrideAttrs (old: {
       libjpeg
     ]
   )
-  ++ lib.optionals (openglSupport && libGL != null) [ libGL ];
+  ++ lib.optionals (openglSupport && libGL != null) [ libGL ]
+  ++ lib.optional (cups != null && lib.meta.availableOn stdenv.hostPlatform cups) cups;
 
   # Wayland QPA plugin deps. Dynamically linked on Linux GUI builds.
   buildInputs = lib.optionals withWayland (
@@ -149,7 +154,7 @@ qtbase'.overrideAttrs (old: {
     "-DQT_FEATURE_libinput=OFF"
     "-DQT_FEATURE_mtdev=OFF"
     "-DQT_FEATURE_tslib=OFF"
-    "-DQT_FEATURE_cups=OFF"
+    (qtFeature "cups" gui)
     "-DQT_FEATURE_glib=OFF"
     (qtFeature "wayland" withWayland)
 
@@ -191,6 +196,7 @@ qtbase'.overrideAttrs (old: {
     # Only used by the (now disabled) min-version check. Setting it prevents
     # cmake from shelling out to xcodebuild to query the version.
     "-DQT_INTERNAL_XCODE_VERSION=0.1"
+
   ]
   ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform && qtbaseNative != null) [
     "-DQT_HOST_PATH=${qtbaseNative}"
@@ -198,6 +204,13 @@ qtbase'.overrideAttrs (old: {
   ++ lib.optionals static [
     "-DQT_FEATURE_reduce_relocations=OFF"
     "-DCMAKE_POSITION_INDEPENDENT_CODE=ON"
+  ]
+  ++ lib.optionals (static && isDarwin) [
+    # Static frameworks are atypical on Darwin and Qt's cmake configs
+    # reference a flat include/ directory that doesn't get created
+    # alongside framework bundles.  Disable frameworks so Qt installs
+    # as plain static libs + include/ (same layout as Linux).
+    (qtFeature "framework" false)
   ];
 
   # The stock nixpkgs postFixup tries to patchelf libQt6Gui.so and the

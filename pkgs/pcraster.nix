@@ -139,6 +139,17 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ];
 
+  # On Darwin, PCRasterConfiguration.cmake patches a rasterformat header
+  # in-place at _deps/rasterformat-src/ inside the build tree.  When the
+  # source is provided via CPM_rasterformat_SOURCE (a read-only nix store
+  # path), that directory doesn't exist.  Create a writable copy so the
+  # patching logic works.
+  preConfigure = lib.optionalString stdenv.hostPlatform.isDarwin ''
+    mkdir -p build/_deps
+    cp -a ${rasterformat-src} build/_deps/rasterformat-src
+    chmod -R u+w build/_deps/rasterformat-src
+  '';
+
   enableParallelBuilding = true;
 
   meta = with lib; {
