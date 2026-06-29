@@ -154,6 +154,7 @@
             pkg-mod-gdal = final.callPackage ./pkgs/gdal.nix {
               inherit static stdenv mkPackageName;
               useMinimalFeatures = false;
+              buildMinimalTools = true; # All tools are massive in size when static linking
               useArmadillo = false; # currently not needed in our builds
               useArrow = false; # currently not added because of additional dependency count
               useCBlosc = false; # currently not needed, required when zarr support is needed

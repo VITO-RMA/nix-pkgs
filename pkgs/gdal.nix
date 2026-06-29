@@ -21,6 +21,7 @@
   usePostgres ? (!useMinimalFeatures),
   useQhull ? (!useMinimalFeatures),
   buildTools ? (!useMinimalFeatures),
+  buildMinimalTools ? false,
   useGrib ? (!useMinimalFeatures),
   usePcRaster ? (!useMinimalFeatures),
 
@@ -204,6 +205,15 @@ stdenv.mkDerivation (finalAttrs: {
 
   enableParallelBuilding = true;
   doInstallCheck = false;
+
+  postInstall = lib.optionalString (buildTools && buildMinimalTools) ''
+    for f in "$out/bin/"*; do
+      case "$(basename "$f")" in
+        gdal_translate|gdalwarp) ;;
+        *) rm -f "$f" ;;
+      esac
+    done
+  '';
 
   meta = with lib; {
     changelog = "https://github.com/OSGeo/gdal/blob/${finalAttrs.src.tag}/NEWS.md";
