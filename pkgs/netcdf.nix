@@ -11,12 +11,24 @@
 }:
 
 let
+  isMsvc =
+    (stdenv.hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+    || ((stdenv.hostPlatform.isWindows or false) && (stdenv.hostPlatform.abi.name or "" == "msvc"));
   exts = stdenv.hostPlatform.extensions or { };
   ext =
     if static then
-      (if stdenv.targetPlatform.isWindows then ".a" else exts.staticLibrary or ".a")
+      (
+        if isMsvc then
+          ".lib"
+        else if stdenv.targetPlatform.isWindows then
+          ".a"
+        else
+          exts.staticLibrary or ".a"
+      )
     else
       (exts.sharedLibrary or ".so");
+  # MSVC static libs have no "lib" prefix (foo.lib), MinGW/Unix use "lib" (libfoo.a)
+  libPrefix = if isMsvc then "" else "lib";
 in
 stdenv.mkDerivation rec {
   pname = mkPackageName "netcdf" static stdenv;
@@ -69,7 +81,7 @@ stdenv.mkDerivation rec {
     "-DNETCDF_ENABLE_FILTER_ZSTD=OFF"
     "-DDISABLE_INSTALL_DEPENDENCIES=ON"
     "-DLIBXML2_INCLUDE_DIR=${tinyxml2}/include"
-    "-DLIBXML2_LIBRARY=${tinyxml2}/lib/libtinyxml2${ext}"
+    "-DLIBXML2_LIBRARY=${tinyxml2}/lib/${libPrefix}tinyxml2${ext}"
     "-DHDF5_DIR=${hdf5}/cmake"
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ];

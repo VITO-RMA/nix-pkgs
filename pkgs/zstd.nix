@@ -40,6 +40,15 @@ stdenv.mkDerivation rec {
     (lib.cmakeBool "ZSTD_BUILD_STATIC" static)
   ];
 
+  # When building static for MSVC, CMake produces zstd_static.lib but
+  # pkg-config advertises -lzstd (→ zstd.lib).  Create a compatibility
+  # symlink so both names work.
+  postInstall = lib.optionalString (static && stdenv.hostPlatform.isWindows) ''
+    if [ -f "$out/lib/zstd_static.lib" ] && [ ! -f "$out/lib/zstd.lib" ]; then
+      ln -s zstd_static.lib "$out/lib/zstd.lib"
+    fi
+  '';
+
   meta = with lib; {
     description = "Zstandard real-time compression algorithm";
     longDescription = ''

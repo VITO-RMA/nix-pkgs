@@ -33,7 +33,7 @@ else
     inherit (xz) version src;
     # Inherit upstream metadata, but drop outputsToInstall: it was computed for
     # nixpkgs xz's outputs (bin/man/...) which this CMake build doesn't produce.
-    meta = builtins.removeAttrs xz.meta [ "outputsToInstall" ];
+    meta = removeAttrs xz.meta [ "outputsToInstall" ];
 
     outputs = [
       "out"
@@ -54,6 +54,17 @@ else
       (lib.cmakeBool "XZ_TOOL_SYMLINKS" false)
       (lib.cmakeBool "XZ_TOOL_SYMLINKS_LZMA" false)
     ];
+
+    # liblzma's headers use __declspec(dllimport) on Windows unless
+    # LZMA_API_STATIC is defined.  When building static, advertise
+    # the define so downstream consumers get correct linkage.
+    postInstall = lib.optionalString static ''
+      for pc in "$dev"/lib/pkgconfig/*.pc; do
+        if [ -f "$pc" ]; then
+          sed -i 's|^Cflags:.*|& -DLZMA_API_STATIC|' "$pc"
+        fi
+      done
+    '';
 
     doCheck = false;
   })

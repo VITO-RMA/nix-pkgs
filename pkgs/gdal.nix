@@ -11,7 +11,9 @@
   useArrow ? (!useMinimalFeatures),
   useCBlosc ? (!useMinimalFeatures), # needed for zarr support
   useCurl ? (!useMinimalFeatures),
-  useCryptopp ? (!useMinimalFeatures),
+  useCryptopp ? (
+    !useMinimalFeatures && !(stdenv.hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+  ),
   useHDF ? (!useMinimalFeatures),
   useLibXml2 ? (!useMinimalFeatures),
   useExpat ? true, # XLSX support
@@ -60,12 +62,24 @@
 }:
 
 let
+  isMsvc =
+    (stdenv.hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+    || ((stdenv.hostPlatform.isWindows or false) && (stdenv.hostPlatform.abi.name or "" == "msvc"));
   exts = stdenv.hostPlatform.extensions or { };
   ext =
     if static then
-      (if stdenv.targetPlatform.isWindows then ".a" else exts.staticLibrary or ".a")
+      (
+        if isMsvc then
+          ".lib"
+        else if stdenv.targetPlatform.isWindows then
+          ".a"
+        else
+          exts.staticLibrary or ".a"
+      )
     else
       (exts.sharedLibrary or ".so");
+  # MSVC static libs have no "lib" prefix (foo.lib), MinGW/Unix use "lib" (libfoo.a)
+  libPrefix = if isMsvc then "" else "lib";
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = mkPackageName ("gdal" + lib.optionalString useMinimalFeatures "-minimal") static stdenv;
@@ -94,7 +108,7 @@ stdenv.mkDerivation (finalAttrs: {
   cmakeFlags = [
     "-DGDAL_USE_INTERNAL_LIBS=OFF"
     "-DGEOTIFF_INCLUDE_DIR=${lib.getDev libgeotiff}/include"
-    "-DGEOTIFF_LIBRARY_RELEASE=${lib.getLib libgeotiff}/lib/libgeotiff${ext}"
+    "-DGEOTIFF_LIBRARY_RELEASE=${lib.getLib libgeotiff}/lib/${libPrefix}geotiff${ext}"
     "-DBUILD_DOCS=OFF"
     "-DBUILD_PYTHON_BINDINGS=OFF"
     "-DBUILD_JAVA_BINDINGS=OFF"
@@ -142,6 +156,27 @@ stdenv.mkDerivation (finalAttrs: {
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     "-DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=ON"
+  ]
+  ++ lib.optionals isMsvc [
+    # libc++.lib and libcmt.lib both define std::nothrow; allow the duplicate
+    "-DCMAKE_EXE_LINKER_FLAGS=-Wl,/FORCE:MULTIPLE"
+    # CryptoPP's try_compile link test fails in cross mode (std::nothrow dup);
+    # the actual library works fine, so skip the test.
+    "-DCRYPTOPP_TEST_KNOWNBUG:BOOL=TRUE"
+    # LibreSSL's .lib files are in the non-dev output, but CMake's FindOpenSSL
+    # only searches CMAKE_PREFIX_PATH (= dev output with no .lib files).
+    # Point it at the correct library locations explicitly.
+    "-DOPENSSL_ROOT_DIR=${lib.getLib openssl}"
+    "-DOPENSSL_CRYPTO_LIBRARY=${lib.getLib openssl}/lib/crypto.lib"
+    "-DOPENSSL_SSL_LIBRARY=${lib.getLib openssl}/lib/ssl.lib"
+  ]
+  ++ lib.optionals (isMsvc && static) [
+    # liblzma headers use __declspec(dllimport) unless LZMA_API_STATIC is set
+    "-DCMAKE_C_FLAGS_INIT=-DLZMA_API_STATIC"
+    "-DCMAKE_CXX_FLAGS_INIT=-DLZMA_API_STATIC"
+    # __int128 compiles with clang but compiler-rt for MSVC lacks __floatuntidf
+    "-DINT128_FOUND:BOOL=FALSE"
+    "-DHAVE_UINT128_T:BOOL=FALSE"
   ];
 
   CXXFLAGS = [
@@ -213,7 +248,7 @@ stdenv.mkDerivation (finalAttrs: {
   postInstall = lib.optionalString (buildTools && buildMinimalTools) ''
     for f in "$out/bin/"*; do
       case "$(basename "$f")" in
-        gdal_translate|gdalwarp) ;;
+        gdal_translate|gdalwarp|gdal_translate.exe|gdalwarp.exe) ;;
         *) rm -f "$f" ;;
       esac
     done

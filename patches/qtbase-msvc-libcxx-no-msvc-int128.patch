@@ -1,0 +1,23 @@
+Avoid including MSVC STL int128 compatibility headers when using libc++.
+
+Qt 6.11's qlocale_tools_p.h uses MSVC's <__msvc_int128.hpp> on MSVC
+compiler targets. In this cross toolchain the target ABI is MSVC, but the C++
+standard library is libc++. Including <__msvc_int128.hpp> pulls in MSVC STL
+headers such as <xtr1common>, which define std type traits in the same namespace
+where libc++ exposes std::__1 via inline namespace aliases. That makes names
+like std::bool_constant, std::enable_if, and std::conditional ambiguous.
+
+Only use the MSVC int128 compatibility header when the MSVC STL is active; skip
+it when libc++ is already in use.
+
+--- a/src/corelib/text/qlocale_tools_p.h
++++ b/src/corelib/text/qlocale_tools_p.h
+@@ -19,7 +19,7 @@
+ #include "qlocale_p.h"
+ #include "qstring.h"
+ 
+-#if !defined(QT_SUPPORTS_INT128) && (defined(Q_CC_MSVC) && (_MSC_VER >= 1930) && __has_include(<__msvc_int128.hpp>))
++#if !defined(QT_SUPPORTS_INT128) && !defined(_LIBCPP_VERSION) && (defined(Q_CC_MSVC) && (_MSC_VER >= 1930) && __has_include(<__msvc_int128.hpp>))
+ #include <__msvc_int128.hpp>
+ #define QT_USE_MSVC_INT128
+ #endif

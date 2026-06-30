@@ -157,6 +157,7 @@
               "sdk/include/ucrt"
               "sdk/include/um"
               "sdk/include/shared"
+              "sdk/include/winrt"
             ];
             libDirs = [
               "crt/lib/${archDir}"

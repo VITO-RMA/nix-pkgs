@@ -1,0 +1,18 @@
+Do not use MSVC STL stdext checked iterators when building with libc++.
+
+Qt detects the MSVC compiler target via _MSC_VER and defines
+QT_MAKE_CHECKED_ARRAY_ITERATOR as stdext::make_checked_array_iterator for older
+MSVC versions. That helper is provided by the MSVC STL, not by libc++. In this
+cross toolchain clang targets the MSVC ABI but uses libc++, so stdext is not
+available.
+
+--- a/src/corelib/global/qcompilerdetection.h
++++ b/src/corelib/global/qcompilerdetection.h
+@@ -76,7 +76,7 @@
+ #  define Q_DECL_EXPORT __declspec(dllexport)
+ #  define Q_DECL_IMPORT __declspec(dllimport)
+-#  if _MSC_VER < 1938 // stdext is deprecated since VS 2022 17.8
++#  if _MSC_VER < 1938 && !defined(_LIBCPP_VERSION) // stdext is deprecated since VS 2022 17.8
+ #    define QT_MAKE_CHECKED_ARRAY_ITERATOR(x, N) stdext::make_checked_array_iterator(x, size_t(N)) // Since _MSC_VER >= 1500
+ #  endif
+ #  ifdef Q_CC_MSVC_ONLY

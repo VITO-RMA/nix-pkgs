@@ -1,0 +1,30 @@
+Forward CMAKE_MSVC_RUNTIME_LIBRARY to the architecture extraction sub-project.
+
+Qt's QtBaseConfigureTests.cmake builds a small "architecture_test" binary via
+an internal sub-CMake project (try_compile-style). This sub-project gets its own
+CMake environment and does not inherit the top-level CMAKE_MSVC_RUNTIME_LIBRARY
+or CMP0091 policy. Without these, CMake defaults to the debug DLL CRT
+(msvcrtd.lib) for the configure-time compiler test. The xwin Windows SDK only
+ships the release CRT, so the link fails with:
+
+  lld-link: error: could not open 'msvcrtd.lib': No such file or directory
+
+Fix: append CMAKE_MSVC_RUNTIME_LIBRARY and CMP0091=NEW to the flags that are
+passed to the sub-project's try_compile() call so it respects the same runtime
+selection as the outer build.
+
+--- a/cmake/QtBaseConfigureTests.cmake
++++ b/cmake/QtBaseConfigureTests.cmake
+@@ -19,6 +19,13 @@
+     )
+
+     set(flags "${arg_CMAKE_FLAGS}")
++    # Forward the MSVC runtime library selection to the architecture extraction
++    # sub-project so it doesn't default to the debug DLL CRT (msvcrtd) that may
++    # not be available in the SDK.
++    if(CMAKE_MSVC_RUNTIME_LIBRARY)
++        list(APPEND flags "-DCMAKE_MSVC_RUNTIME_LIBRARY=${CMAKE_MSVC_RUNTIME_LIBRARY}")
++        list(APPEND flags "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW")
++    endif()
+     list(TRANSFORM flags PREPEND "            " OUTPUT_VARIABLE flags_indented)
+     list(JOIN flags_indented "\n" flags_indented)

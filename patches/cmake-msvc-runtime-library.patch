@@ -14,17 +14,19 @@ the MSVC cc-wrapper exports. On non-MSVC targets CMake simply ignores
 
 --- a/pkgs/by-name/cm/cmake/setup-hook.sh
 +++ b/pkgs/by-name/cm/cmake/setup-hook.sh
-@@ -87,6 +87,16 @@
+@@ -87,6 +87,18 @@
      # Always build Release, to ensure optimisation flags
      prependToVar cmakeFlags "-DCMAKE_BUILD_TYPE=${cmakeBuildType:-Release}"
-
+ 
 +    # Pin the MSVC runtime library when requested (e.g. by a cross cc-wrapper
 +    # targeting the MSVC ABI). CMake otherwise injects its own
 +    # `-Xclang --dependent-lib=<crt>` based on `CMAKE_MSVC_RUNTIME_LIBRARY`,
 +    # defaulting to the debug/dynamic CRT that the xwin Windows SDK does not
-+    # ship. On non-MSVC targets CMake ignores this variable.
++    # ship. Force try_compile projects to use Release too; otherwise CMake's
++    # generated configure tests select the debug CRT (`msvcrtd.lib`).
 +    if [ -n "${NIX_CMAKE_MSVC_RUNTIME_LIBRARY-}" ]; then
 +        prependToVar cmakeFlags "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW"
++        prependToVar cmakeFlags "-DCMAKE_TRY_COMPILE_CONFIGURATION=Release"
 +        prependToVar cmakeFlags "-DCMAKE_MSVC_RUNTIME_LIBRARY=$NIX_CMAKE_MSVC_RUNTIME_LIBRARY"
 +    fi
 +

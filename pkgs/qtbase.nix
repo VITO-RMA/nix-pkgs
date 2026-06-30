@@ -42,12 +42,24 @@ let
     isLinux
     isDarwin
     ;
-  # Desktop OpenGL is available on Linux (libglvnd), MinGW (opengl32 from the
-  # toolchain) and Darwin (the system OpenGL framework, resolved from the SDK).
+  isMsvc =
+    (stdenv.hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+    || ((stdenv.hostPlatform.isWindows or false) && (stdenv.hostPlatform.abi.name or "" == "msvc"));
+
+  # MSVC: forward CMAKE_MSVC_RUNTIME_LIBRARY to the architecture extraction
+  # sub-project so it doesn't default to the debug DLL CRT (msvcrtd) that
+  # is not available in the xwin SDK.
+  msvcArchTestPatch = ../patches/qtbase-arch-test-msvc-runtime.patch;
+  msvcLibcxxInt128Patch = ../patches/qtbase-msvc-libcxx-no-msvc-int128.patch;
+  msvcLibcxxCheckedIteratorPatch = ../patches/qtbase-msvc-libcxx-no-stdext-checked-iterator.patch;
+  icuSupport = !isMsvc;
+  # Desktop OpenGL is available on Linux (libglvnd), Windows (opengl32 from the
+  # SDK/toolchain) and Darwin (the system OpenGL framework, resolved from the SDK).
   # On Darwin it must stay enabled: a GUI build with every OpenGL backend off
   # but without INPUT_opengl=no trips Qt's "OpenGL functionality tests failed"
-  # fatal error in src/gui/configure.cmake.
-  openglSupport = gui && (isLinux || isMinGW || isDarwin);
+  # fatal error in src/gui/configure.cmake. On Windows, the platform plugin still
+  # builds OpenGL-dependent code paths, so keep desktop OpenGL enabled there too.
+  openglSupport = gui && (isLinux || isWindows || isDarwin);
   qtFeature = name: enabled: "-DQT_FEATURE_${name}=${if enabled then "ON" else "OFF"}";
   tlsFlags =
     if isWindows then
@@ -70,6 +82,15 @@ in
 qtbase'.overrideAttrs (old: {
   pname = mkPackageName (if gui then "qtbase" else "qtbase-headless") static stdenv;
 
+  # MSVC: fix architecture extraction test runtime selection
+  patches =
+    (old.patches or [ ])
+    ++ lib.optionals isMsvc [
+      msvcArchTestPatch
+      msvcLibcxxInt128Patch
+      msvcLibcxxCheckedIteratorPatch
+    ];
+
   # Non-GUI dependencies needed for Core, Sql, Xml, Network, plus the GL
   # dispatch library on platforms where it comes from nixpkgs (Linux).
   # OpenSSL is only pulled in where it's the TLS backend; MinGW uses the
@@ -78,9 +99,9 @@ qtbase'.overrideAttrs (old: {
     sqlite
     zlib
     zstd
-    icu
     pcre2
   ]
+  ++ lib.optionals icuSupport [ icu ]
   ++ lib.optionals (!isWindows && !isDarwin) [ openssl ]
   ++ lib.optionals gui (
     lib.filter (x: x != null) [
@@ -117,7 +138,7 @@ qtbase'.overrideAttrs (old: {
     "-DQT_FEATURE_system_pcre2=ON"
     "-DQT_FEATURE_system_zlib=ON"
     "-DQT_FEATURE_system_zstd=ON"
-    "-DQT_FEATURE_icu=ON"
+    (qtFeature "icu" icuSupport)
 
     # Use bundled copies for the rest (double-conversion, libb2, md4c, …)
     "-DQT_FEATURE_system_doubleconversion=OFF"
