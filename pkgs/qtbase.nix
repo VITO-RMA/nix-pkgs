@@ -38,6 +38,7 @@
 let
   inherit (stdenv.hostPlatform)
     isMinGW
+    isWindows
     isLinux
     isDarwin
     ;
@@ -49,7 +50,7 @@ let
   openglSupport = gui && (isLinux || isMinGW || isDarwin);
   qtFeature = name: enabled: "-DQT_FEATURE_${name}=${if enabled then "ON" else "OFF"}";
   tlsFlags =
-    if isMinGW then
+    if isWindows then
       [
         (qtFeature "schannel" true)
         (qtFeature "openssl" false)
@@ -80,7 +81,7 @@ qtbase'.overrideAttrs (old: {
     icu
     pcre2
   ]
-  ++ lib.optionals (!isMinGW && !isDarwin) [ openssl ]
+  ++ lib.optionals (!isWindows && !isDarwin) [ openssl ]
   ++ lib.optionals gui (
     lib.filter (x: x != null) [
       libpng

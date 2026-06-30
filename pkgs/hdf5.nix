@@ -24,6 +24,9 @@ assert !cppSupport || !mpiSupport;
 
 let
   inherit (lib) optional;
+  isMsvc =
+    (stdenv.hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+    || ((stdenv.hostPlatform.isWindows or false) && (stdenv.hostPlatform.abi.name or "" == "msvc"));
 in
 
 stdenv.mkDerivation rec {
@@ -38,6 +41,30 @@ stdenv.mkDerivation rec {
   };
 
   patches = [ ./patches/hdf5-config.patch ];
+
+  # This toolchain is clang driven by its GNU driver (not clang-cl). CMake
+  # therefore (by design) leaves `MSVC` unset — it only sets `MSVC` for the
+  # clang-cl frontend, since `MSVC` means "cl.exe-compatible command line",
+  # not "targets the MSVC ABI". HDF5 conflates the two: `ConfigureChecks.cmake`
+  # seeds `CMAKE_REQUIRED_FLAGS` with MSVC `/D...` syntax, which the GNU driver
+  # treats as input file paths (`no such file or directory: '/DNOGDI=1'`),
+  # breaking *every* configure-time `try_compile` (so e.g. `sys/types.h` is
+  # reported missing and `off_t` ends up undefined). Rewrite to the `-D` form,
+  # which the GNU driver (and cl.exe) both accept.
+  postPatch = lib.optionalString isMsvc ''
+    substituteInPlace config/cmake/ConfigureChecks.cmake \
+      --replace-fail \
+        'set (CMAKE_REQUIRED_FLAGS "/DWIN32_LEAN_AND_MEAN=1 /DNOGDI=1")' \
+        'set (CMAKE_REQUIRED_FLAGS "-DWIN32_LEAN_AND_MEAN=1 -DNOGDI=1")'
+    # HDF5 adds the MSVC `/EHsc` exception flag for any clang simulating MSVC
+    # (`_CLANG_MSVC_WINDOWS`), assuming clang-cl. The GNU driver rejects `/EHsc`
+    # (`no such file or directory: '/EHsc'`); C++ exceptions are enabled by
+    # default for the MSVC ABI anyway, so just drop it.
+    substituteInPlace config/cmake/HDFCXXCompilerFlags.cmake \
+      --replace-fail \
+        'set (CMAKE_CXX_FLAGS "''${CMAKE_CXX_FLAGS} /EHsc")' \
+        'set (CMAKE_CXX_FLAGS "''${CMAKE_CXX_FLAGS}")'
+  '';
 
   passthru = {
     inherit
@@ -86,7 +113,18 @@ stdenv.mkDerivation rec {
   ++ lib.optional stdenv.hostPlatform.isMusl "-DHDF5_ENABLE_NONSTANDARD_FEATURE_FLOAT16=OFF"
   ++ lib.optional (
     stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64
-  ) "-DHDF5_ENABLE_NONSTANDARD_FEATURE_FLOAT16=OFF";
+  ) "-DHDF5_ENABLE_NONSTANDARD_FEATURE_FLOAT16=OFF"
+  # The `HDF5_ENABLE_ALL_WARNINGS` path (default ON) appends MSVC `/Wall`,
+  # `/W3`, `/wd####` warning flags under `if(MSVC)`; the GNU-driver clang
+  # rejects these `/`-prefixed args. Disable it for the MSVC target.
+  ++ lib.optional isMsvc "-DHDF5_ENABLE_ALL_WARNINGS=OFF"
+  # `H5_HAVE_VISUAL_STUDIO` guards HDF5's Windows compatibility code
+  # (`struct timezone`, the `_get_timezone` path in `H5_make_time`, ...).
+  # HDF5 only sets it `if(MSVC)`, but for the GNU-driver clang that is never
+  # true, so the Win32 code is left half-defined and fails to compile. It is
+  # emitted via `#cmakedefine`, so set the variable directly: this target does
+  # use the MSVC ABI / runtime, so the Visual-Studio code paths are correct.
+  ++ lib.optional isMsvc "-DH5_HAVE_VISUAL_STUDIO=1";
 
   enableParallelBuilding = true;
 

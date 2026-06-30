@@ -1,0 +1,43 @@
+Fix compiler-rt libatomic handling on the cross MSVC target.
+
+Two atomics-related problems break the `x86_64-pc-windows-msvc` compiler-rt
+(`-libc`) build:
+
+1. `withAtomicsPthread` defaults on whenever the release is >= 19 and
+   `stdenv.cc.libc != null`, which is true for the MSVC cross target. That
+   passes `-DCOMPILER_RT_LIBATOMIC_USE_PTHREAD=ON`, defining
+   `_LIBATOMIC_USE_PTHREAD`, so `lib/builtins/atomic.c` does `#include
+   <pthread.h>` -- a header that does not exist on the MSVC target -- failing
+   with `fatal error: 'pthread.h' file not found`. atomic.c falls back to a
+   non-pthread lock when the macro is unset, so disable it on Windows.
+
+2. The `postInstall` that aliases the standalone libatomic DSO is hardcoded for
+   ELF `.so` names (`libclang_rt.atomic-*.so`). On Windows the library is built
+   as `clang_rt.atomic_dynamic-*.dll`, so the glob matches nothing; with the
+   build's `nullglob` the second `ln -s $out/lib/*/libclang_rt.atomic-*.so
+   $out/lib/` collapses to `ln -s $out/lib/`, which tries to create `./lib` and
+   fails with `ln: failed to create symbolic link './lib': File exists`. These
+   `.so` aliases are meaningless on Windows, so skip them there (the atomic
+   DLL/import lib is still installed).
+
+--- a/pkgs/development/compilers/llvm/common/compiler-rt/default.nix
++++ b/pkgs/development/compilers/llvm/common/compiler-rt/default.nix
+@@ -36,7 +36,8 @@
+   # implementation of the routines instead of the implementation
+   # using ad-hoc mutexes (which doesn't depend on libc at all).
+   # Use of pthreads helps code play better with sanitizers.
+-  withAtomicsPthread ? lib.versionAtLeast release_version "19" && stdenv.cc.libc != null,
++  withAtomicsPthread ?
++    lib.versionAtLeast release_version "19" && stdenv.cc.libc != null && !stdenv.hostPlatform.isWindows,
+ 
+   # In recent releases, the compiler-rt build seems to produce
+   # many `libclang_rt*` libraries, but not a single unified
+@@ -285,7 +286,7 @@
+     + lib.optionalString forceLinkCompilerRt ''
+       ln -s $out/lib/*/libclang_rt.builtins-*.a $out/lib/libcompiler_rt.a
+     ''
+-    + lib.optionalString (withAtomics && withAtomicsLib) ''
++    + lib.optionalString (withAtomics && withAtomicsLib && !stdenv.hostPlatform.isWindows) ''
+       ln -s $out/lib/*/libclang_rt.atomic-*.so $out/lib/libatomic.so
+       # create a link with the original soname as well, so it's found at runtime
+       ln -s $out/lib/*/libclang_rt.atomic-*.so $out/lib/

@@ -20,6 +20,10 @@ if(NOT FREEXL_ENABLE_XMLDOC)
   set(OMIT_XMLDOC 1)
 endif()
 configure_file(cmake/config.h.in config.h)
+# On MSVC (incl. clang targeting the MSVC ABI) freexl.c includes
+# "config-msvc.h" instead of "config.h"; generate it from the same template
+# so the MSVC code path finds an equivalent, freshly-configured header.
+configure_file(cmake/config.h.in config-msvc.h)
 
 # Generate freexl.pc
 if(NOT Iconv_IS_BUILT_IN)

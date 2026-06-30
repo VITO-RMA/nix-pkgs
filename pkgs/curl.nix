@@ -12,11 +12,21 @@
   mkPackageName,
 }:
 
+let
+  # OpenSSL has no build configuration for the MSVC ABI (its VC build relies on
+  # NMAKE), so it can't be depended on for MSVC targets. Use the OS-provided
+  # Schannel TLS backend there instead. MinGW and other platforms keep OpenSSL.
+  isMsvc =
+    (stdenv.hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+    || ((stdenv.hostPlatform.isWindows or false) && (stdenv.hostPlatform.abi.name or "" == "msvc"));
+  useOpenssl = !isMsvc;
+in
 (curl.override {
   inherit openssl;
   inherit zlib;
   inherit zstd;
   inherit brotli;
+  opensslSupport = useOpenssl;
   c-aresSupport = false;
   http2Support = false;
   http3Support = false;
@@ -36,11 +46,11 @@
     ];
 
     buildInputs = [
-      openssl
       zlib
       zstd
       brotli
-    ];
+    ]
+    ++ lib.optionals useOpenssl [ openssl ];
 
     # Drop autotools configure flags/phases – we use CMake now.
     configureFlags = [ ];
@@ -51,7 +61,6 @@
       "-DBUILD_CURL_EXE=OFF"
       "-DENABLE_CURL_MANUAL=OFF"
       "-DSHARE_LIB_OBJECT=OFF"
-      "-DCURL_USE_OPENSSL=ON"
       "-DCURL_BROTLI=ON"
       "-DCURL_ZSTD=ON"
       "-DCURL_USE_LIBPSL=OFF"
@@ -66,10 +75,14 @@
       "-DCURL_USE_RTMP=OFF"
       "-DCURL_USE_CMAKECONFIG=ON"
       "-DCURL_USE_PKGCONFIG=ON"
+      (lib.cmakeBool "CURL_USE_OPENSSL" useOpenssl)
       (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
     ]
     ++ lib.optionals stdenv.hostPlatform.isWindows [
       "-DENABLE_UNICODE=ON"
+    ]
+    ++ lib.optionals isMsvc [
+      "-DCURL_USE_SCHANNEL=ON"
     ];
 
     # Ensure CMake pkg-config calls resolve static deps in cross builds.

@@ -1,0 +1,33 @@
+Allow selecting the MSVC runtime library via an environment variable.
+
+When cross compiling to the MSVC ABI, CMake manages the C runtime itself:
+for every MSVC-like compiler it injects `-Xclang --dependent-lib=<crt>` based
+on `CMAKE_MSVC_RUNTIME_LIBRARY`, independently of any `-fms-runtime-lib`
+compiler flag. Its default picks the debug, dynamically-linked CRT for the
+configure-time compiler test, which fails because the Windows SDK fetched by
+xwin only ships the release CRT (`could not open 'msvcrtd.lib'`).
+
+There is no per-package hook reachable for the LLVM runtime bootstrap
+(libunwind/libcxx/compiler-rt), so honour an opt-in environment variable that
+the MSVC cc-wrapper exports. On non-MSVC targets CMake simply ignores
+`CMAKE_MSVC_RUNTIME_LIBRARY`, so this is a no-op everywhere else.
+
+--- a/pkgs/by-name/cm/cmake/setup-hook.sh
++++ b/pkgs/by-name/cm/cmake/setup-hook.sh
+@@ -87,6 +87,16 @@
+     # Always build Release, to ensure optimisation flags
+     prependToVar cmakeFlags "-DCMAKE_BUILD_TYPE=${cmakeBuildType:-Release}"
+
++    # Pin the MSVC runtime library when requested (e.g. by a cross cc-wrapper
++    # targeting the MSVC ABI). CMake otherwise injects its own
++    # `-Xclang --dependent-lib=<crt>` based on `CMAKE_MSVC_RUNTIME_LIBRARY`,
++    # defaulting to the debug/dynamic CRT that the xwin Windows SDK does not
++    # ship. On non-MSVC targets CMake ignores this variable.
++    if [ -n "${NIX_CMAKE_MSVC_RUNTIME_LIBRARY-}" ]; then
++        prependToVar cmakeFlags "-DCMAKE_POLICY_DEFAULT_CMP0091=NEW"
++        prependToVar cmakeFlags "-DCMAKE_MSVC_RUNTIME_LIBRARY=$NIX_CMAKE_MSVC_RUNTIME_LIBRARY"
++    fi
++
+     # Disable user package registry to avoid potential side effects
+     # and unecessary attempts to access non-existent home folder
+     # https://cmake.org/cmake/help/latest/manual/cmake-packages.7.html#disabling-the-package-registry

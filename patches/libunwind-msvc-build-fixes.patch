@@ -1,0 +1,59 @@
+Fix the libunwind build for the cross MSVC (clang GNU-driver) toolchain.
+
+Two independent problems break the `x86_64-pc-windows-msvc` libunwind build:
+
+1. `.lib` name collision. libunwind's CMake always *creates* both the
+   `unwind_shared` and `unwind_static` targets, each with `OUTPUT_NAME
+   "unwind"`. The disabled one is only marked `EXCLUDE_FROM_ALL`, which keeps it
+   out of the default build but still emits a ninja rule for it. On the MSVC ABI
+   a shared library's import library and a static archive are both named
+   `unwind.lib`, so ninja sees two rules generating `lib/unwind.lib` and fails
+   with `ninja: error: build.ninja:NNN: multiple rules generate lib/unwind.lib`.
+   Fixed by defaulting `enableShared` off on Windows (this toolchain links
+   statically) and renaming the always-created-but-excluded shared target's
+   output so its import-library rule no longer collides.
+
+2. `use of undeclared identifier '_malloca'` / `'_freea'`. On `_WIN32`
+   libunwind uses `_malloca`/`_freea` for `.cfi_remember_state`, but those live
+   in `<malloc.h>`, which libunwind never includes -- only `<corecrt_malloc.h>`
+   (`malloc`/`free`) is pulled in transitively via `<stdlib.h>`. Enable the
+   officially-supported `LIBUNWIND_REMEMBER_HEAP_ALLOC` option so the heap
+   (`malloc`/`free`) path is compiled instead of the `_malloca` path.
+
+Disabling the shared library also means `doFakeLibgcc` (which aliases the
+shared libunwind to `libgcc_s`) has nothing to point at, so gate it on
+`enableShared` to avoid a dangling `libgcc_s.dll.a` symlink. This is a no-op
+for non-Windows targets, where `enableShared` already tracks `!isStatic`.
+
+--- a/pkgs/development/compilers/llvm/common/libunwind/default.nix
++++ b/pkgs/development/compilers/llvm/common/libunwind/default.nix
+@@ -11,8 +11,8 @@
+   ninja,
+   python3,
+   libcxx,
+-  enableShared ? !stdenv.hostPlatform.isStatic,
+-  doFakeLibgcc ? stdenv.hostPlatform.useLLVM && !stdenv.hostPlatform.isStatic,
++  enableShared ? !stdenv.hostPlatform.isStatic && !stdenv.hostPlatform.isWindows,
++  doFakeLibgcc ? stdenv.hostPlatform.useLLVM && !stdenv.hostPlatform.isStatic && enableShared,
+   devExtraCmakeFlags ? [ ],
+   getVersionFile,
+ }:
+@@ -55,6 +55,18 @@
+     (lib.cmakeBool "LIBUNWIND_ENABLE_SHARED" enableShared)
+     (lib.cmakeFeature "LLVM_ENABLE_RUNTIMES" "libunwind")
+   ]
++  # On the MSVC ABI the static archive and the shared library's import
++  # library are both named `unwind.lib`. Both targets are always generated
++  # (the disabled one is merely EXCLUDE_FROM_ALL), so rename the shared
++  # target's output to avoid `multiple rules generate lib/unwind.lib`.
++  ++ lib.optionals stdenv.hostPlatform.isWindows [
++    (lib.cmakeFeature "LIBUNWIND_SHARED_OUTPUT_NAME" "unwind_shared")
++    # `_malloca`/`_freea` live in <malloc.h>, which libunwind never includes;
++    # only <corecrt_malloc.h> (malloc/free) is pulled in via <stdlib.h>. Use the
++    # heap allocator for .cfi_remember_state so the `_WIN32` `_malloca` path is
++    # not compiled ("use of undeclared identifier `_malloca`").
++    (lib.cmakeBool "LIBUNWIND_REMEMBER_HEAP_ALLOC" true)
++  ]
+   ++ devExtraCmakeFlags;
+ 
+   postInstall =

@@ -1,0 +1,89 @@
+Fix the libcxx build for the cross MSVC (clang GNU-driver) toolchain.
+
+On the MSVC ABI, libc++'s native C++ runtime is the system *vcruntime* — that
+is libc++'s own default ABI for MSVC (`LIBCXX_DEFAULT_ABI_LIBRARY = "vcruntime"`
+in libcxx/CMakeLists.txt). nixpkgs, however, builds libc++abi in-tree and forces
+`LIBCXX_CXX_ABI=libcxxabi` whenever no external `cxxabi` is supplied (which is
+the case here). libc++abi does not support the MSVC ABI: it unconditionally
+compiles `stdlib_typeinfo.cpp` / `stdlib_exception.cpp`, defining
+`std::type_info` / `std::exception` / `std::bad_alloc` / `std::bad_array_new_length`.
+
+A previous workaround set `LIBCXX_NO_VCRUNTIME` so libc++abi provided the whole
+C++ runtime. That builds, but the resulting `libc++.lib` then *defines* those std
+exception/RTTI types — which collide with the MSVC CRT (`libcmt`), which also
+defines them. Statically linking any executable that allocates memory pulls in
+the CRT's `throw_bad_alloc.obj` and `lld-link` aborts with `duplicate symbol`.
+
+The correct configuration (and libc++'s own MSVC default) is to use the
+`vcruntime` ABI: libc++ defers `std::exception`/`std::type_info`/`std::bad_alloc`
+to the system vcruntime, and libc++abi is not built at all. This removes the
+duplicate-symbol conflict with the MSVC CRT.
+
+We additionally:
+  * default `enableShared` off on Windows (this toolchain links statically), and
+  * rename the always-generated-but-excluded shared libc++ target's output, since
+    on the MSVC ABI a shared library's import library and a static archive are
+    both named `c++.lib`, so ninja would otherwise fail the generate step with
+    `multiple rules generate lib/c++.lib`.
+
+--- a/pkgs/development/compilers/llvm/common/libcxx/default.nix
++++ b/pkgs/development/compilers/llvm/common/libcxx/default.nix
+@@ -15,7 +15,7 @@
+   freebsd,
+   cxxabi ? if stdenv.hostPlatform.isFreeBSD then freebsd.libcxxrt else null,
+   libunwind,
+-  enableShared ? stdenv.hostPlatform.hasSharedLibraries,
++  enableShared ? stdenv.hostPlatform.hasSharedLibraries && !stdenv.hostPlatform.isWindows,
+   devExtraCmakeFlags ? [ ],
+   substitute,
+   fetchpatch,
+@@ -27,8 +27,19 @@
+ # https://github.com/NixOS/nixpkgs/issues/269548
+ assert cxxabi == null || !stdenv.hostPlatform.isDarwin;
+ let
+-  cxxabiName = "lib${if cxxabi == null then "cxxabi" else cxxabi.libName}";
+-  runtimes = [ "libcxx" ] ++ lib.optional (cxxabi == null) "libcxxabi";
++  # On the MSVC ABI libc++'s native C++ runtime is the system vcruntime (this
++  # is libc++'s own default for MSVC). Build libc++ against `vcruntime` and do
++  # not build libc++abi at all: libc++abi does not support the MSVC ABI, and
++  # forcing it in (with LIBCXX_NO_VCRUNTIME) makes it define std::exception /
++  # std::bad_alloc / std::type_info, which then collide with the MSVC CRT
++  # (libcmt) that also defines them when statically linking executables.
++  isMsvcAbi = stdenv.hostPlatform.isWindows;
++  cxxabiName =
++    if isMsvcAbi then
++      "vcruntime"
++    else
++      "lib${if cxxabi == null then "cxxabi" else cxxabi.libName}";
++  runtimes = [ "libcxx" ] ++ lib.optional (cxxabi == null && !isMsvcAbi) "libcxxabi";
+ 
+   # Note: useLLVM is likely false for Darwin but true under pkgsLLVM
+   useLLVM = stdenv.hostPlatform.useLLVM or false;
+@@ -53,9 +64,16 @@
+     (lib.cmakeFeature "LIBCXX_CXX_ABI" cxxabiName)
+     (lib.cmakeBool "LIBCXX_ENABLE_SHARED" enableShared)
+     # https://github.com/llvm/llvm-project/issues/55245
+-    (lib.cmakeBool "LIBCXX_ENABLE_STATIC_ABI_LIBRARY" stdenv.hostPlatform.isWindows)
++    (lib.cmakeBool "LIBCXX_ENABLE_STATIC_ABI_LIBRARY" false)
+   ]
+-  ++ lib.optionals (cxxabi == null) [
++  ++ lib.optionals isMsvcAbi [
++    # The shared libc++ target is still generated (EXCLUDE_FROM_ALL) even with
++    # LIBCXX_ENABLE_SHARED=OFF, and on the MSVC ABI its import library collides
++    # with the static archive on `c++.lib`. Rename it to avoid
++    # `multiple rules generate lib/c++.lib`.
++    (lib.cmakeFeature "LIBCXX_SHARED_OUTPUT_NAME" "c++_shared")
++  ]
++  ++ lib.optionals (cxxabi == null && !isMsvcAbi) [
+     # Include libc++abi symbols within libc++.a for static linking libc++;
+     # dynamic linking includes them through libc++.so being a linker script
+     # which includes both shared objects.
+@@ -101,7 +119,7 @@
+     (lib.cmakeBool "UNIX" true) # Required otherwise libc++ fails to detect the correct linker
+   ]
+   ++ cxxCMakeFlags
+-  ++ lib.optionals (cxxabi == null) cxxabiCMakeFlags
++  ++ lib.optionals (cxxabi == null && !isMsvcAbi) cxxabiCMakeFlags
+   ++ devExtraCmakeFlags;
+ 
+ in

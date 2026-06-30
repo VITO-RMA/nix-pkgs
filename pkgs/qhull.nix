@@ -6,6 +6,11 @@
   mkPackageName,
 }:
 
+let
+  isMsvc =
+    (stdenv.hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+    || ((stdenv.hostPlatform.isWindows or false) && (stdenv.hostPlatform.abi.name or "" == "msvc"));
+in
 (qhull.override {
 }).overrideAttrs
   (old: {
@@ -17,7 +22,21 @@
       ./patches/qhull-fix-qhullcpp-cpp20-support.patch
     ];
 
-    cmakeFlags = old.cmakeFlags or [ ] ++ [
+    # qhull's CMakeLists.txt has `project()` before `cmake_minimum_required()`.
+    # This means CMP0091 (MSVC runtime library abstraction) isn't active when
+    # the compiler test runs during project(), causing it to link with the debug
+    # DLL CRT (msvcrtd.lib) which the release-only Windows SDK doesn't ship.
+    # Swap the order so policies are set before the compiler test.
+    postPatch =
+      (old.postPatch or "")
+      + lib.optionalString isMsvc ''
+        substituteInPlace CMakeLists.txt \
+          --replace-fail \
+            $'project(qhull)\ncmake_minimum_required(VERSION 3.5...4.0)' \
+            $'cmake_minimum_required(VERSION 3.5...4.0)\nproject(qhull)'
+      '';
+
+    cmakeFlags = (old.cmakeFlags or [ ]) ++ [
       (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
       (lib.cmakeBool "BUILD_APPLICATIONS" false)
     ];

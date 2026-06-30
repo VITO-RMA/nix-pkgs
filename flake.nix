@@ -17,7 +17,7 @@
         pkg: static: stdenv:
         let
           clib =
-            if stdenv.hostPlatform.config or "" == "x86_64-w64-mingw32" then
+            if stdenv.hostPlatform.isWindows or false then
               ""
             else if stdenv.hostPlatform.isStatic then
               "-musl"
@@ -54,7 +54,7 @@
               '';
               gccWin32 = buildPkgs.wrapCCWith {
                 cc = buildPkgs.gcc-unwrapped.override {
-                  # Uss win32 threads instead of posix mcfgthread:
+                  # Use win32 threads instead of posix mcfgthread:
                   # threadsCross = {
                   #   model = "win32";
                   #   package = null;
@@ -75,6 +75,284 @@
               stdenv = stdenvWin;
             };
 
+      # createMsvcOverlay is the MSVC-ABI counterpart of `mingwOverlay`.
+      #
+      # Instead of GCC/MinGW it relies on the LLVM toolchain (clang / clang-cl
+      # + lld-link) that nixpkgs wires up for the `x86_64-pc-windows-msvc`
+      # cross target, producing MSVC-ABI binaries using the same backend that
+      # powers `clang-cl`.
+      #
+      # nixpkgs ships the Windows SDK + CRT (via `xwin`, as `windows.sdk`) but
+      # does *not* wire its header/library directories into the cross cc-wrapper
+      # — the wrapper bakes in `-nostdlibinc` with nothing to compensate, so
+      # even the `compiler-rt` bootstrap fails with `'stdlib.h' file not found`.
+      # This overlay closes that gap by overriding `wrapCCWith` so every MSVC
+      # clang wrapper (bootstrap stages included) gets the SDK search paths, and
+      # optionally selects the static MSVC runtime.
+      #
+      # It is written as a factory (`createMsvcOverlay { ... }`) so callers can
+      # choose whether to link the static MSVC runtime.
+      createMsvcOverlay =
+        {
+          # Link the static MSVC runtime (libcmt) via `-fms-runtime-lib=static`
+          # so produced binaries don't depend on the MSVC redistributable runtime DLLs.
+          staticCrt ? true,
+        }:
+        final: prev:
+        let
+          baseStdenv = prev.stdenv or null;
+        in
+        # During early bootstrap `prev.stdenv` can be null or incomplete.
+        if baseStdenv == null then
+          { }
+        else
+          let
+            lib = prev.lib;
+
+            platformIsMsvc =
+              p:
+              (p.config or "" == "x86_64-pc-windows-msvc")
+              || ((p.isWindows or false) && (p.abi.name or "" == "msvc"));
+
+            # The cc-wrapper override must fire wherever an MSVC-targeting clang
+            # wrapper is built. That includes `pkgsBuildHost` (where the cross
+            # compiler that builds the LLVM toolchain lives), whose *host* is the
+            # build machine but whose *target* is MSVC. So gate the wrapper
+            # override on the target platform, and gate the stdenv replacement on
+            # the host platform. Native (non-MSVC-targeting) sets such as
+            # `pkgsBuildBuild` are left untouched, so host compilers never see
+            # the Windows SDK headers.
+            targetIsMsvc = platformIsMsvc baseStdenv.targetPlatform;
+            hostIsMsvc = platformIsMsvc baseStdenv.hostPlatform;
+
+            # `windows.sdk` is fetched for the *host* arch of whichever package
+            # set evaluates it (xwin's `fetchWinSdk` derives the arch from
+            # `stdenvNoCC.hostPlatform`). The wrapper is built in `pkgsBuildHost`,
+            # whose host is the build machine (e.g. aarch64-linux), so
+            # `prev.windows.sdk` there would download the *wrong* arch SDK and
+            # the final link would fail with missing `*.lib` import libraries.
+            # `targetPackages.windows.sdk` always resolves to the SDK whose arch
+            # matches the MSVC *target* (x86_64), in both `pkgsBuildHost` and the
+            # main cross set, so use that.
+            sdk = prev.targetPackages.windows.sdk;
+
+            # xwin `splat` uses MS arch notation for the per-arch lib dirs.
+            target = baseStdenv.targetPlatform;
+            archDir =
+              if target.isx86_64 then
+                "x64"
+              else if target.isAarch64 then
+                "arm64"
+              else if target.isx86_32 then
+                "x86"
+              else
+                throw "createMsvcOverlay: unsupported MSVC target arch ${target.config}";
+
+            # The xwin `splat` layout of `windows.sdk`:
+            #   <sdk>/crt/{include,lib/<arch>}         -> MSVC CRT (libcmt, ...)
+            #   <sdk>/sdk/include/{ucrt,um,shared}     -> Windows SDK headers
+            #   <sdk>/sdk/lib/{ucrt,um}/<arch>         -> Windows SDK import libs
+            includeDirs = [
+              "crt/include"
+              "sdk/include/ucrt"
+              "sdk/include/um"
+              "sdk/include/shared"
+            ];
+            libDirs = [
+              "crt/lib/${archDir}"
+              "sdk/lib/ucrt/${archDir}"
+              "sdk/lib/um/${archDir}"
+            ];
+            # Use `-idirafter` (not `-isystem`) for the SDK/CRT header dirs so
+            # they are searched *after* clang's builtin/resource headers. With
+            # `-nostdlibinc` there are no standard system dirs, so `-idirafter`
+            # dirs sit at the very end of the search order. This lets clang's
+            # resource `<stddef.h>` win and `#include_next` into the UCRT one.
+            # (clang-cl achieves this with `-imsvc`, but that flag is rejected
+            # by the GNU `clang`/`clang++` driver this wrapper uses.)
+            #
+            # With plain `-isystem` the UCRT `<stddef.h>` shadows clang's resource
+            # header, and since the UCRT copy lacks `max_align_t` (clang injects
+            # it for the MSVC ABI), libc++ fails to build with `no type named
+            # 'max_align_t' in the global namespace`.
+            includeFlags = lib.concatMapStringsSep " " (d: "-idirafter ${sdk}/${d}") includeDirs;
+            # The resource compiler (`windres`/`llvm-rc`) preprocesses `.rc`
+            # files but, unlike the cc-wrapper, gets none of the SDK header
+            # search paths, so any `#include <winver.h>` (etc.) fails. windres
+            # takes include dirs via `--include-dir` (passed on to its
+            # preprocessor as `-I`), so feed it the same SDK header dirs.
+            windresIncludeFlags = lib.concatMapStringsSep " " (d: "--include-dir ${sdk}/${d}") includeDirs;
+            libFlags = lib.concatMapStringsSep " " (d: "-L${sdk}/${d}") libDirs;
+            crtFlag = lib.optionalString staticCrt "-fms-runtime-lib=static";
+
+            # libc++ uses the MSVC ABI's `vcruntime` as its C++ runtime, and its
+            # `exception.cpp` calls the MSVC `__ExceptionPtr*` EH helpers used to
+            # implement `std::exception_ptr`. Those live in the MSVC *C++* runtime
+            # library (`libcpmt.lib` static / `msvcprt.lib` dynamic), not in
+            # vcruntime or the C runtime. Normally MSVC's STL headers pull it in
+            # via `#pragma comment(lib, "libcpmt")`, but we use libc++'s headers
+            # instead, so nothing references it and the link fails with undefined
+            # `__ExceptionPtr*` symbols. Add it as a default library (searched
+            # after the explicit inputs, so libc++'s own symbols still win and
+            # only the EH-helper objects are pulled in).
+            cppRuntimeLib = if staticCrt then "libcpmt" else "msvcprt";
+            cppRuntimeFlag = "-Xlinker /defaultlib:${cppRuntimeLib}";
+
+            # libc++ (and libc++abi) compile their own sources with
+            # `-D_CRT_STDIO_ISO_WIDE_SPECIFIERS` (see libcxx/CMakeLists.txt
+            # `cxx_add_windows_flags`), which bakes a
+            # `detect_mismatch("_CRT_STDIO_ISO_WIDE_SPECIFIERS", "1")` marker
+            # into every libc++ object via the UCRT headers. Application code
+            # defaults to `0`, so `lld-link`'s `/failifmismatch` aborts any link
+            # that mixes our libc++ with normally-compiled objects. Define it to
+            # `1` for the whole set so every translation unit matches libc++.
+            wideSpecifiersFlag = "-D_CRT_STDIO_ISO_WIDE_SPECIFIERS=1";
+
+            # When targeting the MSVC ABI, the clang GNU driver defaults to
+            # invoking MSVC's `link.exe`, which doesn't exist in this toolchain,
+            # so any bare link fails with `posix_spawn failed: No such file or
+            # directory`. CMake-driven builds escape this because they set the
+            # linker explicitly, but autotools/plain-make builds (xz, bzip2, ...)
+            # use the driver directly and break. Force the driver to use LLVM's
+            # `lld` everywhere; for the MSVC target it resolves to `lld-link`.
+            #
+            # This must be a *driver* argument: in `cc-ldflags` the cc-wrapper
+            # appends it in linker position, where clang forwards it verbatim to
+            # the linker (and still defaults to `link.exe`). `cc-cflags` are
+            # passed as driver args on every invocation (compile and link-only),
+            # so clang parses it and selects the linker. During `-c` compiles it
+            # is unused, but the wrapper already adds
+            # `-Wno-unused-command-line-argument`.
+            useLldFlag = "-fuse-ld=lld";
+
+            # CMake manages the MSVC runtime itself: when targeting the MSVC ABI
+            # it injects `-Xclang --dependent-lib=<crt>` based on its
+            # `CMAKE_MSVC_RUNTIME_LIBRARY` variable, *regardless* of the
+            # `-fms-runtime-lib` compiler flag above. Its default selects the
+            # debug, dynamically-linked CRT (`msvcrtd`) for the configure-time
+            # compiler test, but xwin only ships the *release* CRT, so the link
+            # fails with `could not open 'msvcrtd.lib'`. Even when it resolves,
+            # CMake's choice would fight `-fms-runtime-lib=static`.
+            #
+            # There is no per-package hook we can reach for the LLVM runtime
+            # bootstrap (libunwind/libcxx/compiler-rt), so the cc-wrapper
+            # exports a sentinel env var and a small patch to CMake's setup
+            # hook (see ./patches/cmake-msvc-runtime-library.patch) turns it
+            # into `-DCMAKE_MSVC_RUNTIME_LIBRARY=...`. This keeps every CMake
+            # build in the set consistent with the static/dynamic choice above.
+            cmakeRuntimeLib = if staticCrt then "MultiThreaded" else "MultiThreadedDLL";
+
+            # Appended to every MSVC clang wrapper's flag files. `cc-cflags`
+            # and `cc-ldflags` are consumed on every compile/link, so this
+            # also fixes the toolchain bootstrap (compiler-rt, libc++, ...).
+            msvcWrapperHook = ''
+              printf '%s\n' "${includeFlags} ${crtFlag} ${wideSpecifiersFlag} ${useLldFlag}" >> $out/nix-support/cc-cflags
+              printf '%s\n' "${libFlags} ${cppRuntimeFlag}" >> $out/nix-support/cc-ldflags
+              cat <<EOF >> $out/nix-support/setup-hook
+              export NIX_CMAKE_MSVC_RUNTIME_LIBRARY=${cmakeRuntimeLib}
+              EOF
+            '';
+
+            # The resource compiler (`windres`, an unwrapped symlink to LLVM's
+            # raw binutils binary) has no flag-file mechanism like the
+            # cc-wrapper, so it never sees the SDK header search paths and any
+            # `.rc` that `#include <winver.h>` (etc.) fails to preprocess.
+            # Replace each `*windres` in the bintools wrapper with a tiny shell
+            # shim that bakes in the SDK `--include-dir` flags before the real
+            # binary's own args.
+            #
+            # `windres` here is a symlink chain that bottoms out at the single
+            # `llvm-rc` binary, which switches between MSVC `rc.exe` mode
+            # (`/D`, `/FO`, ...) and GNU `windres` mode (`-i`, `-o`,
+            # `--output-format`, ...) based on its `argv[0]`. `readlink -f`
+            # collapses the chain to the raw `llvm-rc` path, so we must restore
+            # a `windres`-named `argv[0]` via `exec -a`; otherwise it runs in
+            # `rc.exe` mode and rejects the GNU-style flags that autotools'
+            # libtool passes (`Exactly one input file should be provided.`).
+            windresWrapperHook = ''
+              for w in $out/bin/*windres; do
+                [ -e "$w" ] || continue
+                real=$(readlink -f "$w")
+                base=$(basename "$w")
+                rm -f "$w"
+                printf '#!%s\nexec -a "%s" "%s" %s "$@"\n' "${prev.runtimeShell}" "$base" "$real" "${windresIncludeFlags}" > "$w"
+                chmod +x "$w"
+              done
+            '';
+
+            # nixpkgs' bintools-wrapper only adds a dependency's `$out/lib` to
+            # the linker search path when it looks like it holds libraries; its
+            # heuristic globs `lib/lib*` (Unix `libfoo.a`/`libfoo.so` naming).
+            # MSVC import/static libraries are named `z.lib`, `foo.lib` (no
+            # `lib` prefix), so directories full of them are silently skipped
+            # and autotools `-lz`-style links fail with `could not open
+            # 'z.lib'`. Extend the glob to also accept `*.lib`.
+            bintoolsLibGlobHook = ''
+              if [ -e $out/nix-support/setup-hook ]; then
+                sed -i 's#glob=( $1/lib/lib\* )#glob=( $1/lib/lib* $1/lib/*.lib )#' $out/nix-support/setup-hook
+              fi
+            '';
+
+            stdenvMsvc = baseStdenv // {
+              hostPlatform = baseStdenv.hostPlatform // {
+                isStatic = true;
+              };
+            };
+          in
+          # Inject the Windows SDK search paths into every MSVC clang wrapper
+          # produced in this package set (and in `pkgsBuildHost`), including
+          # the LLVM toolchain bootstrap.
+          (lib.optionalAttrs targetIsMsvc {
+            wrapCCWith =
+              args:
+              prev.wrapCCWith (
+                args
+                // {
+                  extraBuildCommands = (args.extraBuildCommands or "") + "\n" + msvcWrapperHook;
+                }
+              );
+            wrapBintoolsWith =
+              args:
+              prev.wrapBintoolsWith (
+                args
+                // {
+                  extraBuildCommands =
+                    (args.extraBuildCommands or "") + "\n" + windresWrapperHook + "\n" + bintoolsLibGlobHook;
+                }
+              );
+          })
+          // (lib.optionalAttrs hostIsMsvc {
+            # make this the stdenv for MSVC targets
+            stdenv = stdenvMsvc;
+
+            # nixpkgs tzdata's Windows CFLAGS assume MinGW (which has mempcpy,
+            # POSIX names like open/close/read without deprecation, ssize_t, and
+            # getopt). MSVC UCRT lacks all of these. Since we only need the zone
+            # data + libtz.a + tzfile.h (not the zic/zdump tools), skip building
+            # tools entirely to avoid the missing getopt link error.
+            tzdata = prev.tzdata.overrideAttrs (old: {
+              makeFlags = builtins.filter (f: !(lib.hasPrefix "CFLAGS+=-DHAVE_MEMPCPY" f)) old.makeFlags ++ [
+                "CFLAGS+=-DHAVE_MEMPCPY=0"
+                "CFLAGS+=-D_CRT_SECURE_NO_WARNINGS"
+                "CFLAGS+=-D_CRT_NONSTDC_NO_WARNINGS"
+                "CFLAGS+=-Dssize_t=__int64"
+              ];
+              preBuild = (old.preBuild or "") + ''
+                makeFlagsArray+=("CFLAGS+=-include io.h")
+              '';
+              # The zic/zdump/tzselect tools need getopt which MSVC lacks.
+              # We only need the zone data (produced by native zic) + libtz.a.
+              # Patch the Makefile to not build or install the tools.
+              postPatch = (old.postPatch or "") + ''
+                sed -i '/^all:/{N; s/all:.*\n.*/all: libtz.a $(TABDATA) vanguard.zi main.zi rearguard.zi/}' Makefile
+                sed -i 's/INSTALL_DATA_DEPS = zic/INSTALL_DATA_DEPS =/' Makefile
+                sed -i '/cp.*tzselect.*BINDIR/d' Makefile
+                sed -i '/cp.*zdump.*ZDUMPDIR/d' Makefile
+                sed -i '/cp.*zic.*ZICDIR/d' Makefile
+              '';
+            });
+          });
+
       # mkOverlay is a function that creates a Nix overlay for overriding or adding packages.
       # we prepend the packages with pkg to avoid rebuilding the world
       # otherwise all the packages in the system that depend on one of these
@@ -91,6 +369,13 @@
           final: prev:
           let
             stdenv = prev.stdenv;
+            # The MSVC ABI cross target. OpenSSL has no build configuration for
+            # this ABI, so packages that hard-require OpenSSL use LibreSSL (an
+            # API-compatible, CMake-buildable drop-in) there instead.
+            isMsvc =
+              (stdenv.hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+              || ((stdenv.hostPlatform.isWindows or false) && (stdenv.hostPlatform.abi.name or "" == "msvc"));
+            sslProvider = if isMsvc then final.pkg-mod-libressl else final.pkg-mod-openssl;
           in
           {
             pkg-mod-benchmark = final.callPackage ./pkgs/benchmark.nix {
@@ -114,7 +399,7 @@
             pkg-mod-curl = final.callPackage ./pkgs/curl.nix {
               inherit static stdenv mkPackageName;
               brotli = final.pkg-mod-brotli;
-              openssl = final.pkg-mod-openssl;
+              openssl = sslProvider;
               zlib = final.pkg-mod-zlib-compat;
               zstd = final.pkg-mod-zstd;
             };
@@ -182,7 +467,7 @@
               libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
               lz4 = final.pkg-mod-lz4;
-              openssl = final.pkg-mod-openssl;
+              openssl = sslProvider;
               pcre2 = final.pkg-mod-pcre2;
               proj = final.pkg-mod-proj;
               sqlite = final.pkg-mod-sqlite;
@@ -218,7 +503,7 @@
               libxml2 = final.pkg-mod-libxml2;
               netcdf = final.pkg-mod-netcdf;
               lz4 = final.pkg-mod-lz4;
-              openssl = final.pkg-mod-openssl;
+              openssl = sslProvider;
               pcre2 = final.pkg-mod-pcre2;
               proj = final.pkg-mod-proj;
               sqlite = final.pkg-mod-sqlite;
@@ -299,7 +584,8 @@
             pkg-mod-libpq = final.callPackage ./pkgs/libpq.nix {
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
-              openssl = final.pkg-mod-openssl;
+              openssl = sslProvider;
+              tzdata = final.tzdata;
             };
 
             pkg-mod-libpqxx = final.callPackage ./pkgs/libpqxx.nix {
@@ -320,6 +606,7 @@
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
               minizip = final.pkg-mod-minizip;
+              openssl = sslProvider;
             };
 
             pkg-mod-libxml2 = final.callPackage ./pkgs/libxml2.nix {
@@ -387,6 +674,14 @@
               zlib = final.pkg-mod-zlib-compat;
             };
 
+            pkg-mod-libressl = final.callPackage ./pkgs/libressl.nix {
+              inherit static stdenv mkPackageName;
+              # `libressl` is a thin alias that doesn't expose the `buildShared`
+              # argument; the versioned attr does, which we need to force a
+              # static-only build (the MSVC platform reports isStatic = false).
+              libressl = final.libressl_4_2;
+            };
+
             pkg-mod-pcre2 = final.callPackage ./pkgs/pcre2.nix {
               inherit static stdenv mkPackageName;
             };
@@ -413,7 +708,7 @@
             pkg-mod-qtbase =
               let
                 host = stdenv.hostPlatform;
-                isMinGW = (host.isMinGW or false) || (host.config or "" == "x86_64-w64-mingw32");
+                isMinGW = (host.isWindows or false) || (host.config or "" == "x86_64-w64-mingw32");
                 isMusl = host.isMusl or false;
 
                 # Desktop OpenGL provider for the GUI build:
@@ -448,7 +743,7 @@
                     };
 
                 sharedDeps = {
-                  openssl = final.pkg-mod-openssl;
+                  openssl = sslProvider;
                   pcre2 = final.pkg-mod-pcre2;
                   zlib = final.pkg-mod-zlib-compat;
                   zstd = final.pkg-mod-zstd;
@@ -550,7 +845,10 @@
             windows =
               (prev.windows or { })
               // (
-                if (final.stdenv.hostPlatform.isWindows or false) then
+                # mcfgthreads is a MinGW-specific threading runtime; it is not
+                # used by the MSVC/clang-cl toolchain, so restrict the override
+                # to genuine MinGW hosts.
+                if (final.stdenv.hostPlatform.isMinGW or false) then
                   {
                     mcfgthreads = final.callPackage ./pkgs/mcfgthreads.nix {
                       inherit static stdenv;
@@ -581,6 +879,7 @@
           pkgs,
           mkName ? (name: name),
           requireMingwSupport ? false,
+          requireMsvcSupport ? false,
           excludeNames ? [ ],
         }:
 
@@ -600,6 +899,17 @@
                   # Fix: ensure we test for the actual attribute name `mingwSupport`
                   # instead of using the boolean `requireMingwSupport` as an attr name.
                   if pkg ? mingwSupport then pkg.mingwSupport else true
+                else
+                  true
+              )
+              && (
+                if requireMsvcSupport then
+                  let
+                    pkg = pkgs.${name};
+                  in
+                  # A package opts out of the MSVC target by setting
+                  # `msvcSupport = false;`. Default to building it otherwise.
+                  if pkg ? msvcSupport then pkg.msvcSupport else true
                 else
                   true
               )
@@ -690,6 +1000,81 @@
           pkgsDefault = pkgsBase;
           pkgsMingw = pkgsMingwCross;
         };
+
+      # mkBuildEnvMsvcCross is the MSVC-ABI counterpart of
+      # `mkBuildEnvMingwCross`. It instantiates nixpkgs for the
+      # `x86_64-pc-windows-msvc` cross target using the LLVM toolchain
+      # (clang / clang-cl + lld-link) and layers `createMsvcOverlay` plus the
+      # static package overlay on top.
+      mkBuildEnvMsvcCross =
+        system:
+        {
+          # Producing MSVC-ABI binaries requires Microsoft's Windows SDK and
+          # CRT, which are unfree. nixpkgs gates these behind an explicit
+          # license acknowledgement. By building this environment you accept
+          # the Microsoft Software License Terms:
+          #   https://visualstudio.microsoft.com/license-terms/mt644918/
+          acceptMicrosoftLicense ? true,
+          # Link the static MSVC runtime so the binaries are self-contained.
+          staticCrt ? true,
+        }:
+        let
+          # MSVC cross-compilation is only supported from Linux build hosts,
+          # mirroring the MinGW cross environment above.
+          isLinux = builtins.elem system [
+            "x86_64-linux"
+            "aarch64-linux"
+          ];
+
+          pkgsBase = import nixpkgs {
+            inherit system;
+            config.strictDeps = true;
+          };
+
+          # nixpkgs' `x86_64-pc-windows-msvc` LLVM toolchain can't bootstrap its
+          # own `compiler-rt` as-is: it compiles the x87 80-bit `long double`
+          # builtins, which don't exist under the MSVC ABI. That bootstrap
+          # derivation is bound too early to fix with an overlay, so patch the
+          # nixpkgs source itself before importing the cross package set.
+          patchedNixpkgs = pkgsBase.applyPatches {
+            name = "nixpkgs-msvc-compiler-rt";
+            src = nixpkgs;
+            patches = [
+              ./patches/compiler-rt-msvc-no-80bit-builtins.patch
+              ./patches/compiler-rt-msvc-atomics.patch
+              ./patches/cmake-msvc-runtime-library.patch
+              ./patches/libunwind-msvc-build-fixes.patch
+              ./patches/libcxx-msvc-build-fixes.patch
+            ];
+          };
+
+          # Cross-compiled static libraries for MSVC (x86_64-pc-windows-msvc)
+          pkgsMsvcCross =
+            if !isLinux then
+              null
+            else
+              import patchedNixpkgs {
+                inherit system;
+                config = {
+                  allowUnfree = true;
+                  microsoftVisualStudioLicenseAccepted = acceptMicrosoftLicense;
+                };
+                crossSystem = {
+                  config = "x86_64-pc-windows-msvc";
+                  # Always use the LLVM toolchain: clang-cl emits the MSVC ABI
+                  # and lld-link performs the final link.
+                  useLLVM = true;
+                };
+                overlays = [
+                  (createMsvcOverlay { inherit staticCrt; })
+                  (mkOverlay { static = true; })
+                ];
+              };
+        in
+        {
+          pkgsDefault = pkgsBase;
+          pkgsMsvc = pkgsMsvcCross;
+        };
     in
     {
       # A "normal" overlay (no parameters): used by nix tooling / flake check
@@ -702,6 +1087,8 @@
       lib.mkOverlay = mkOverlay;
       lib.mkBuildEnv = mkBuildEnv;
       lib.mkBuildEnvMingwCross = mkBuildEnvMingwCross;
+      lib.mkBuildEnvMsvcCross = mkBuildEnvMsvcCross;
+      lib.createMsvcOverlay = createMsvcOverlay;
 
       packages = builtins.listToAttrs (
         map (system: {
@@ -710,10 +1097,12 @@
             let
               buildEnv = mkBuildEnv system;
               buildEnvMingw = mkBuildEnvMingwCross system { llvm = false; };
+              buildEnvMsvc = mkBuildEnvMsvcCross system { };
 
               pkgsStaticGlibc = buildEnv.pkgsStatic;
               pkgsStaticMusl = buildEnv.pkgsStaticMusl;
               pkgsMingwCross = buildEnvMingw.pkgsMingw;
+              pkgsMsvcCross = buildEnvMsvc.pkgsMsvc;
 
               staticAttrs = forEachPkgMod {
                 pkgs = pkgsStaticGlibc;
@@ -737,8 +1126,14 @@
                 mkName = name: "${name}-win-static";
                 requireMingwSupport = true;
               };
+
+              msvcAttrs = forEachPkgMod {
+                pkgs = pkgsMsvcCross;
+                mkName = name: "${name}-msvc-static";
+                requireMsvcSupport = true;
+              };
             in
-            staticAttrs // muslAttrs // winAttrs;
+            staticAttrs // muslAttrs // winAttrs // msvcAttrs;
         }) systems
       );
 

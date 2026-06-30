@@ -1,0 +1,25 @@
+Treat any Windows target like MSVC when selecting compiler-rt builtins.
+
+Under the MSVC ABI `long double` is 64-bit, so the x87 80-bit / 128-bit
+`long double` builtins (fixxfdi.c, floatuntixf.c, ...) must not be compiled.
+compiler-rt's builtins CMakeLists only excludes those sources when CMake's
+`MSVC` variable is set, which requires the clang-cl frontend. nixpkgs drives
+the cross build with the GNU clang driver (`clang --target=...-windows-msvc`),
+so CMake never sets `MSVC` and the build fails with `unknown type name
+'xf_float'`. Treat any `WIN32` target the same as `MSVC` to exclude them.
+
+--- a/pkgs/development/compilers/llvm/common/compiler-rt/default.nix
++++ b/pkgs/development/compilers/llvm/common/compiler-rt/default.nix
+@@ -222,8 +222,12 @@
+   postPatch =
+     lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
+       substituteInPlace cmake/builtin-config-ix.cmake \
+         --replace-fail 'set(X86 i386)' 'set(X86 i386 i486 i586 i686)'
+     ''
++    + lib.optionalString stdenv.hostPlatform.isWindows ''
++      substituteInPlace lib/builtins/CMakeLists.txt \
++        --replace-fail 'if (NOT MSVC)' 'if (NOT MSVC AND NOT WIN32)'
++    ''
+     + lib.optionalString (!haveLibc) (
+       (lib.optionalString (lib.versions.major release_version == "18") ''
+         substituteInPlace lib/builtins/aarch64/sme-libc-routines.c \

@@ -1,4 +1,5 @@
 {
+  lib,
   stdenv,
   libjpeg,
   static ? stdenv.hostPlatform.isStatic,
@@ -6,6 +7,12 @@
   fetchFromGitHub,
 }:
 
+let
+  hostPlatform = stdenv.hostPlatform;
+  isMsvc =
+    (hostPlatform.config or "" == "x86_64-pc-windows-msvc")
+    || ((hostPlatform.isWindows or false) && (hostPlatform.abi.name or "" == "msvc"));
+in
 (libjpeg.override {
   enableShared = !static;
   enableStatic = static;
@@ -21,4 +28,13 @@
     };
 
     patches = [ ./patches/libjpeg-mingw-boolean.patch ];
+
+    # libjpeg-turbo's CMake install only lays down man pages on Unix hosts, so
+    # the declared `man` output is never created when cross-building to Windows.
+    # Create it so Nix accepts the multi-output derivation.
+    postInstall =
+      (old.postInstall or "")
+      + lib.optionalString isMsvc ''
+        mkdir -p "$man"
+      '';
   })

@@ -58,6 +58,7 @@ stdenv.mkDerivation (finalAttrs: {
   CXXFLAGS = [
     # GCC 13: error: 'int64_t' in namespace 'std' does not name a type
     "-include cstdint"
+    "-DNOMINMAX"
   ];
 
   preCheck =

@@ -144,6 +144,10 @@ stdenv.mkDerivation (finalAttrs: {
     "-DCMAKE_BUILD_WITH_INSTALL_NAME_DIR=ON"
   ];
 
+  CXXFLAGS = [
+    "-DNOMINMAX"
+  ];
+
   buildInputs =
     let
       postgresDeps = lib.optionals usePostgres [ libpq ];

@@ -12,6 +12,10 @@
   mkPackageName,
 }:
 
+let
+  # Use the provided TLS library (OpenSSL or LibreSSL) for MD5 when available.
+  useOpenssl = openssl != null;
+in
 stdenv.mkDerivation rec {
   pname = mkPackageName "libxlsxwriter" static stdenv;
   version = "1.2.4";
@@ -35,17 +39,16 @@ stdenv.mkDerivation rec {
   buildInputs = [
     minizip
     zlib
-    openssl
-  ];
+  ]
+  ++ lib.optionals useOpenssl [ openssl ];
   propagatedBuildInputs = buildInputs;
 
   cmakeFlags = [
     "-DUSE_SYSTEM_MINIZIP=1"
     "-DWINDOWSSTORE=OFF"
     "-DUSE_DTOA_LIBRARY=OFF"
-    "-DUSE_OPENSSL_MD5=ON"
     (lib.cmakeBool "USE_MEMFILE" useMemFile)
-    (lib.cmakeBool "USE_OPENSSL_MD5" (openssl != null))
+    (lib.cmakeBool "USE_OPENSSL_MD5" useOpenssl)
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
   ];
 
