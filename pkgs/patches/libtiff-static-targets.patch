@@ -10,9 +10,9 @@ diff '--color=auto' -Naur a/cmake/LZMACodec.cmake b/cmake/LZMACodec.cmake
  
  option(lzma "use liblzma (required for LZMA2 compression)" ${LIBLZMA_FOUND})
  if (lzma AND LIBLZMA_FOUND)
-diff '--color=auto' -Naur a/cmake/TiffConfig.cmake.in b/cmake/TiffConfig.cmake.in
---- a/cmake/TiffConfig.cmake.in	2024-10-29 00:57:03.000000000 +0100
-+++ b/cmake/TiffConfig.cmake.in	2025-11-19 09:21:21.142664740 +0100
+diff '--color=auto' -Naur a/cmake/tiff-config.cmake.in b/cmake/tiff-config.cmake.in
+--- a/cmake/tiff-config.cmake.in	2024-10-29 00:57:03.000000000 +0100
++++ b/cmake/tiff-config.cmake.in	2025-11-19 09:21:21.142664740 +0100
 @@ -1,5 +1,66 @@
  if(NOT "@BUILD_SHARED_LIBS@")
 -    # TODO: import dependencies
