@@ -215,6 +215,19 @@ stdenv.mkDerivation (finalAttrs: {
     done
   '';
 
+  # GDAL's CMake pkg-config generator (cmake/helpers/GdalGenerateConfig.cmake,
+  # gdal_get_lflags()) mis-serializes macOS framework entries that come from
+  # curl's CMake target as raw "-framework Foo" strings: since they don't
+  # match any of its special cases, it blindly prepends the link-library flag
+  # ("-l" on Darwin), producing the malformed "-l-framework Foo". For static
+  # builds this ends up in gdal.pc's Libs: field, which breaks linking of
+  # anything consuming gdal.pc via pkg-config (e.g. gdal-sys/cargo). Repair it
+  # here rather than patching GDAL's CMake.
+  postFixup = lib.optionalString (static && stdenv.hostPlatform.isDarwin) ''
+    substituteInPlace "$out/lib/pkgconfig/gdal.pc" \
+      --replace-quiet "-l-framework " "-framework "
+  '';
+
   meta = with lib; {
     changelog = "https://github.com/OSGeo/gdal/blob/${finalAttrs.src.tag}/NEWS.md";
     description = "Translator library for raster geospatial data formats";
