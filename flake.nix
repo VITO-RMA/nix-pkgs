@@ -29,6 +29,85 @@
         in
         "${pkg}${suffix}${clib}";
 
+      mkZigCrossGlibcStdenv =
+        {
+          buildPackages,
+          baseStdenv,
+          glibcVersion ? "2.28",
+        }:
+        let
+          targetPlatform = baseStdenv.targetPlatform;
+          target = "${targetPlatform.system}-${targetPlatform.parsed.abi.name}.${glibcVersion}";
+          portablePlatform = targetPlatform // {
+            config = "${targetPlatform.parsed.cpu.name}-any-linux-${targetPlatform.parsed.abi.name}";
+          };
+          zig = buildPackages.zig_0_16;
+          # Re-wrap the target LLVM tools without nixpkgs glibc. This keeps ar,
+          # ranlib, and the linker available without injecting a Nix-store
+          # dynamic loader into target executables.
+          targetBintools = buildPackages.wrapBintoolsWith {
+            bintools = buildPackages.gcc.bintools.bintools;
+            libc = null;
+          };
+          zigCC = buildPackages.wrapCCWith {
+            name = "zig-glibc-${glibcVersion}";
+            cc = zig.cc-unwrapped;
+            bintools = targetBintools;
+            libc = null;
+            extraPackages = [ ];
+            # Zig 0.16 accepts linker dependency files but currently crashes
+            # while processing them for some CMake targets.
+            extraBuildCommands = ''
+              # Zig sets libc++ hardening to NONE before forwarding compiler
+              # arguments. Undefine it before Nix selects its hardened mode to
+              # avoid a macro-redefinition warning in every C++ translation unit.
+              substituteInPlace "$out/nix-support/add-hardening.sh" \
+                --replace-fail \
+                  "hardeningCFlagsBefore+=('-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST')" \
+                  "hardeningCFlagsBefore+=('-U_LIBCPP_HARDENING_MODE' '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_FAST')" \
+                --replace-fail \
+                  "hardeningCFlagsBefore+=('-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE')" \
+                  "hardeningCFlagsBefore+=('-U_LIBCPP_HARDENING_MODE' '-D_LIBCPP_HARDENING_MODE=_LIBCPP_HARDENING_MODE_EXTENSIVE')"
+
+              cat > $out/nix-support/zig-meson-cross-file.conf <<'EOF'
+              [binaries]
+              ar = '${targetPlatform.config}-ar'
+              ranlib = '${targetPlatform.config}-ranlib'
+              strip = '${targetPlatform.config}-strip'
+              EOF
+
+              cat > $out/nix-support/zig-meson-native-file.conf <<'EOF'
+              [binaries]
+              c = '${buildPackages.stdenv.cc}/bin/cc'
+              cpp = '${buildPackages.stdenv.cc}/bin/c++'
+              ar = '${buildPackages.stdenv.cc.bintools}/bin/ar'
+              ranlib = '${buildPackages.stdenv.cc.bintools}/bin/ranlib'
+              strip = '${buildPackages.stdenv.cc.bintools}/bin/strip'
+              EOF
+
+              cat <<'EOF' >> $out/nix-support/setup-hook
+              appendToVar cmakeFlags "-DCMAKE_LINK_DEPENDS_USE_LINKER=FALSE"
+              appendToVar mesonFlags "--cross-file=$NIX_CC/nix-support/zig-meson-cross-file.conf"
+              appendToVar mesonFlags "--native-file=$NIX_CC/nix-support/zig-meson-native-file.conf"
+              EOF
+            '';
+            nixSupport.cc-cflags = [
+              "-target"
+              target
+            ];
+          };
+        in
+        assert targetPlatform.isLinux && targetPlatform.isGnu;
+        buildPackages.overrideCC (baseStdenv.override {
+          # The CPU and kernel match the build machine, but target binaries
+          # use a distro loader that is intentionally absent in the sandbox.
+          buildPlatform = baseStdenv.buildPlatform // {
+            canExecute = _: false;
+          };
+          hostPlatform = portablePlatform;
+          targetPlatform = portablePlatform;
+        }) zigCC;
+
       mingwOverlay =
         final: prev:
         let
@@ -610,8 +689,33 @@
             }) names
           );
 
-      mkBuildEnv =
-        system:
+      zigCrossCheckExclusions = [
+        "pkg-mod-maplibre-native-static"
+        "pkg-mod-netcdf-fortran-static"
+        "pkg-mod-pcraster-static"
+        "pkg-mod-qtbase-headless-static"
+        "pkg-mod-qtbase-static"
+        "pkg-mod-qwt-static"
+      ];
+
+      isZigPackage = _name: package: package.stdenv.cc.isZig or false;
+
+      mkZigCrossCheck =
+        system: packages:
+        let
+          pkgs = import nixpkgs { inherit system; };
+          zigPackages = inputs.nixpkgs.lib.filterAttrs (
+            name: package: isZigPackage name package && !(builtins.elem name zigCrossCheckExclusions)
+          ) packages;
+          links = inputs.nixpkgs.lib.mapAttrsToList (name: path: { inherit name path; }) zigPackages;
+        in
+        pkgs.linkFarm "zig-cross-packages-${system}" links;
+
+      mkBuildEnvWith =
+        {
+          system,
+          glibcVersion ? "2.28",
+        }:
         let
           # We only support musl on Linux; Darwin will keep its native libc
           isLinux = builtins.elem system [
@@ -632,8 +736,41 @@
             static = true;
           };
 
+          pkgsStaticGlibcBase =
+            if isLinux then
+              import nixpkgs {
+                localSystem = system;
+                crossSystem = pkgsBase.stdenv.hostPlatform // {
+                  useZig = true;
+                  linker = "lld";
+                };
+                crossOverlays = [
+                  (final: _prev: {
+                    # Some nixpkgs dependencies add this hook when target
+                    # binaries are not executable. Deliberately leave it empty:
+                    # portable outputs must never be run through an emulator.
+                    mesonEmulatorHook = final.buildPackages.makeSetupHook {
+                      name = "disable-target-execution";
+                    } (final.buildPackages.writeText "disable-target-execution.sh" "");
+                  })
+                ];
+                config = {
+                  strictDeps = true;
+                  replaceCrossStdenv =
+                    {
+                      buildPackages,
+                      baseStdenv,
+                    }:
+                    mkZigCrossGlibcStdenv {
+                      inherit buildPackages baseStdenv glibcVersion;
+                    };
+                };
+              }
+            else
+              pkgsBase;
+
           pkgsDynamicGlibc = pkgsBase.extend dynamicOverlay;
-          pkgsStaticGlibc = pkgsBase.extend staticOverlay;
+          pkgsStaticGlibc = pkgsStaticGlibcBase.extend staticOverlay;
           pkgsStaticMusl = if isLinux then pkgsBase.pkgsStatic.extend staticOverlay else null;
         in
         {
@@ -641,6 +778,9 @@
           pkgsStatic = pkgsStaticGlibc;
           pkgsStaticMusl = pkgsStaticMusl;
         };
+
+      # Keep the original API while providing a configurable glibc baseline.
+      mkBuildEnv = system: mkBuildEnvWith { inherit system; };
 
       mkBuildEnvMingwCross =
         system:
@@ -693,12 +833,14 @@
       # A "normal" overlay (no parameters): used by nix tooling / flake check
       overlays.default = mkOverlay { static = false; };
 
-      # A factory that *you* can use from consumer flakes:
-      # overlays applied as: (static-pkgs.overlayForStatic true)
+      # Package overrides only. Consumers that need the versioned Zig/glibc
+      # cross stdenv should use lib.mkBuildEnv or lib.mkBuildEnvWith.
       overlays.forStatic = mkOverlay { static = true; };
 
       lib.mkOverlay = mkOverlay;
+      lib.mkZigCrossGlibcStdenv = mkZigCrossGlibcStdenv;
       lib.mkBuildEnv = mkBuildEnv;
+      lib.mkBuildEnvWith = mkBuildEnvWith;
       lib.mkBuildEnvMingwCross = mkBuildEnvMingwCross;
 
       packages = builtins.listToAttrs (
@@ -740,7 +882,22 @@
         }) systems
       );
 
-      checks = self.packages;
+      checks = builtins.mapAttrs (
+        system: packages:
+        let
+          # Zig packages are covered by the aggregate check below. Keeping
+          # them as individual checks would also build the excluded Qt stack.
+          nonZigPackages = inputs.nixpkgs.lib.filterAttrs (
+            name: package: !(isZigPackage name package)
+          ) packages;
+        in
+        nonZigPackages
+        // {
+          # Qt and its consumers are excluded, as is netcdf-fortran because
+          # Zig has no Fortran frontend and would pull in a source-built GCC.
+          zig-cross-packages = mkZigCrossCheck system packages;
+        }
+      ) self.packages;
 
       devShells = forEachSupportedSystem (
         { pkgs, ... }:

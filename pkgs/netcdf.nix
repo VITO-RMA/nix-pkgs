@@ -36,6 +36,11 @@ stdenv.mkDerivation rec {
     ./patches/netcdf-install-prefix.patch
   ];
 
+  postPatch = ''
+    substituteInPlace libdispatch/derror.c \
+      --replace-fail 'PACKAGE_VERSION " of "__DATE__" "__TIME__" $"' 'PACKAGE_VERSION " $"'
+  '';
+
   nativeBuildInputs = [
     cmake
   ];

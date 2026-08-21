@@ -4,7 +4,6 @@
   fetchFromGitHub,
   autoreconfHook,
   pkg-config,
-  numactl,
   static ? stdenv.hostPlatform.isStatic,
   mkPackageName,
 }:
@@ -48,18 +47,6 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   enableParallelBuilding = true;
-
-  postInstall = lib.optionalString stdenv.hostPlatform.isLinux ''
-    if [ -d "${numactl}/lib64" ]; then
-      numalibdir="${numactl}/lib64"
-    else
-      numalibdir="${numactl}/lib"
-      test -d "$numalibdir"
-    fi
-
-    sed -i "$lib/lib/libhwloc.la" \
-      -e "s|-lnuma|-L$numalibdir -lnuma|g"
-  '';
 
   # Checks disabled because they're impure (hardware dependent) and
   # fail on some build machines.
