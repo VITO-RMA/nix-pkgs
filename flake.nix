@@ -281,10 +281,8 @@
             pkg-mod-libgeotiff = final.callPackage ./pkgs/libgeotiff.nix {
               inherit static stdenv mkPackageName;
               libtiff = final.pkg-mod-libtiff;
-              lerc = final.pkg-mod-lerc;
               proj = final.pkg-mod-proj;
               zlib = final.pkg-mod-zlib-compat;
-              zstd = final.pkg-mod-zstd;
             };
 
             pkg-mod-libjpeg = final.callPackage ./pkgs/libjpeg.nix {

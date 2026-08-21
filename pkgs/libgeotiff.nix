@@ -4,10 +4,8 @@
   fetchFromGitHub,
   cmake,
   libtiff,
-  lerc,
   proj,
   zlib,
-  zstd,
   static ? stdenv.hostPlatform.isStatic,
   mkPackageName,
 }:
@@ -34,10 +32,8 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     libtiff
-    lerc
     proj
     zlib
-    zstd
   ];
 
   propagatedBuildInputs = buildInputs;
@@ -55,7 +51,6 @@ stdenv.mkDerivation rec {
     "-DHAVE_TIFFMERGEFIELDINFO=1"
     # "-DZLIB_INCLUDE_DIR=${lib.getDev zlib}/include"
     # "-DZLIB_LIBRARY=${lib.getLib zlib}/lib/libz${ext}"
-    # "-Dzstd_DIR=${lib.getLib zstd}/lib/cmake/zstd"
   ]
   ++ [ (lib.cmakeBool "BUILD_SHARED_LIBS" (!static)) ];
 
