@@ -698,6 +698,20 @@
         "pkg-mod-qwt-static"
       ];
 
+      # Keep Qt and packages that depend on it out of musl and MinGW checks.
+      qtCheckExclusions = [
+        # musl
+        "pkg-mod-pcraster-musl-static"
+        "pkg-mod-qtbase-headless-musl-static"
+
+        # MinGW
+        "pkg-mod-maplibre-native-win-static"
+        "pkg-mod-pcraster-win-static"
+        "pkg-mod-qtbase-headless-win-static"
+        "pkg-mod-qtbase-win-static"
+        "pkg-mod-qwt-win-static"
+      ];
+
       isZigPackage = _name: package: package.stdenv.cc.isZig or false;
 
       mkZigCrossCheck =
@@ -851,6 +865,35 @@
               buildEnv = mkBuildEnv system;
               buildEnvMingw = mkBuildEnvMingwCross system { llvm = false; };
 
+              dynamicAttrs =
+                if
+                  builtins.elem system [
+                    "x86_64-linux"
+                    "aarch64-linux"
+                  ]
+                then
+                  let
+                    # Build PCRaster directly against the pinned, unmodified
+                    # nixpkgs dependencies rather than the pkg-mod overlay.
+                    pkgsDynamicBase = import nixpkgs {
+                      inherit system;
+                      config.strictDeps = true;
+                    };
+                  in
+                  {
+                    pcraster = pkgsDynamicBase.callPackage ./pkgs/pcraster.nix {
+                      static = false;
+                      withPython = false;
+                      mkPackageName =
+                        pkg: _static: _stdenv:
+                        pkg;
+                      qtbase = pkgsDynamicBase.qt6.qtbase;
+                      xerces-c = pkgsDynamicBase.xercesc;
+                    };
+                  }
+                else
+                  { };
+
               pkgsStaticGlibc = buildEnv.pkgsStatic;
               pkgsStaticMusl = buildEnv.pkgsStaticMusl;
               pkgsMingwCross = buildEnvMingw.pkgsMingw;
@@ -878,7 +921,7 @@
                 requireMingwSupport = true;
               };
             in
-            staticAttrs // muslAttrs // winAttrs;
+            dynamicAttrs // staticAttrs // muslAttrs // winAttrs;
         }) systems
       );
 
@@ -888,7 +931,7 @@
           # Zig packages are covered by the aggregate check below. Keeping
           # them as individual checks would also build the excluded Qt stack.
           nonZigPackages = inputs.nixpkgs.lib.filterAttrs (
-            name: package: !(isZigPackage name package)
+            name: package: !(isZigPackage name package) && !(builtins.elem name qtCheckExclusions)
           ) packages;
         in
         nonZigPackages
