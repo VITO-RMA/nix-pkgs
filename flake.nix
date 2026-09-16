@@ -425,8 +425,7 @@
               inherit static stdenv mkPackageName;
               sqlite = final.pkg-mod-sqlite;
               zlib = final.pkg-mod-zlib-compat;
-              qtbase =
-                if (stdenv.hostPlatform.isWindows or false) then final.pkg-mod-qtbase else final.qt6.qtbase;
+              qtbase = final.pkg-mod-qtbase;
             };
 
             pkg-mod-minizip = final.callPackage ./pkgs/minizip.nix {
@@ -537,6 +536,7 @@
                 // {
                   inherit static stdenv mkPackageName;
                   gui = true;
+                  withWayland = isLinuxGlibc && !static;
                   qtbase = final.qt6.qtbase.override (sharedDeps // { libGL = guiLibGL; });
                   qtbaseNative = final.buildPackages.qt6.qtbase;
                   sqlite = final.pkg-mod-sqlite;

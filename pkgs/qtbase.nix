@@ -15,7 +15,10 @@
   libpng ? null,
   libjpeg ? null,
   gui ? !stdenv.hostPlatform.isMusl,
-  withWayland ? gui && stdenv.hostPlatform.isLinux,
+  # Wayland is intentionally limited to shared builds: nixpkgs' Wayland stack
+  # only provides shared libraries, so linking it would prevent fully static
+  # Linux applications.
+  withWayland ? gui && stdenv.hostPlatform.isLinux && !static,
   # Wayland QPA stack. Linked dynamically on Linux GUI builds; null elsewhere.
   wayland ? null,
   wayland-scanner ? null,
@@ -67,6 +70,18 @@ in
 qtbase'.overrideAttrs (old: {
   pname = mkPackageName (if gui then "qtbase" else "qtbase-headless") static stdenv;
 
+  postPatch =
+    (old.postPatch or "")
+    + lib.optionalString (stdenv.cc.isZig or false) ''
+      # Zig exposes the kernel's CLOSE_RANGE_CLOEXEC constant even when its
+      # selected glibc baseline predates the close_range() wrapper (glibc 2.34).
+      # Keep Qt's existing portable fallback available for older baselines.
+      substituteInPlace src/corelib/io/qprocess_unix.cpp \
+        --replace-fail \
+          "#ifdef CLOSE_RANGE_CLOEXEC" \
+          "#if defined(CLOSE_RANGE_CLOEXEC) && (!defined(__GLIBC__) || __GLIBC_PREREQ(2, 34))"
+    '';
+
   # Non-GUI dependencies needed for Core, Sql, Xml, Network, plus the GL
   # dispatch library on platforms where it comes from nixpkgs (Linux).
   # OpenSSL is only pulled in where it's the TLS backend; MinGW uses the
@@ -115,6 +130,10 @@ qtbase'.overrideAttrs (old: {
     "-DQT_FEATURE_system_zlib=ON"
     "-DQT_FEATURE_system_zstd=ON"
     "-DQT_FEATURE_icu=ON"
+    # CMake's FindBacktrace resolves against the build host's glibc when using
+    # the Zig compatibility stdenv, then leaks those headers into target C++
+    # compile commands ahead of Zig's libc++ headers.
+    (qtFeature "backtrace" (!(stdenv.cc.isZig or false)))
 
     # Use bundled copies for the rest (double-conversion, libb2, md4c, …)
     "-DQT_FEATURE_system_doubleconversion=OFF"
@@ -152,7 +171,6 @@ qtbase'.overrideAttrs (old: {
     "-DQT_FEATURE_libinput=OFF"
     "-DQT_FEATURE_mtdev=OFF"
     "-DQT_FEATURE_tslib=OFF"
-    (qtFeature "cups" gui)
     "-DQT_FEATURE_glib=OFF"
     (qtFeature "wayland" withWayland)
 
