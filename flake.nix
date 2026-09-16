@@ -427,7 +427,6 @@
               zlib = final.pkg-mod-zlib-compat;
               qtbase =
                 if (stdenv.hostPlatform.isWindows or false) then final.pkg-mod-qtbase else final.qt6.qtbase;
-              icu = final.pkg-mod-icu;
             };
 
             pkg-mod-minizip = final.callPackage ./pkgs/minizip.nix {
@@ -544,7 +543,7 @@
                   libpng = final.pkg-mod-libpng;
                   libjpeg = final.pkg-mod-libjpeg;
                   libGL = guiLibGL;
-                  cups = final.cups;
+                  cups = null;
                 }
               );
 

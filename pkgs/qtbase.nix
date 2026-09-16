@@ -29,9 +29,7 @@
   #  • MinGW : `null` — OpenGL (opengl32) is shipped with the cross toolchain
   #            and is picked up automatically, so no nix package is required.
   libGL ? null,
-  # CUPS — required by PrintSupport on all platforms. The Apple SDK strips
-  # its CUPS headers/stubs in favour of the nixpkgs package, so we need
-  # the nixpkgs cups everywhere.
+  # Optional CUPS support for the PrintSupport module.
   cups ? null,
 }:
 
@@ -125,6 +123,7 @@ qtbase'.overrideAttrs (old: {
     # ── GUI / Widgets / OpenGL stack ────────────────────────────────────
     (qtFeature "gui" gui)
     (qtFeature "widgets" gui)
+    (qtFeature "cups" (cups != null))
     # Desktop OpenGL (links libGL on Linux / opengl32 on MinGW / the system
     # OpenGL framework on Darwin). We don't build the GLES/EGL or Vulkan
     # backends in this variant.
