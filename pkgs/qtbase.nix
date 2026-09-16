@@ -14,6 +14,7 @@
   openssl,
   libpng ? null,
   libjpeg ? null,
+  fontconfig ? null,
   gui ? !stdenv.hostPlatform.isMusl,
   # Wayland is intentionally limited to shared builds: nixpkgs' Wayland stack
   # only provides shared libraries, so linking it would prevent fully static
@@ -50,6 +51,7 @@ let
   # but without INPUT_opengl=no trips Qt's "OpenGL functionality tests failed"
   # fatal error in src/gui/configure.cmake.
   openglSupport = gui && (isLinux || isMinGW || isDarwin);
+  fontconfigSupport = gui && isLinux && fontconfig != null;
   qtFeature = name: enabled: "-DQT_FEATURE_${name}=${if enabled then "ON" else "OFF"}";
   tlsFlags =
     if isMinGW then
@@ -103,6 +105,7 @@ qtbase'.overrideAttrs (old: {
     ]
   )
   ++ lib.optionals (openglSupport && libGL != null) [ libGL ]
+  ++ lib.optional fontconfigSupport fontconfig
   ++ lib.optional (cups != null && lib.meta.availableOn stdenv.hostPlatform cups) cups;
 
   # Wayland QPA plugin deps. Dynamically linked on Linux GUI builds.
@@ -152,14 +155,14 @@ qtbase'.overrideAttrs (old: {
     "-DQT_FEATURE_opengles2=OFF"
     "-DQT_FEATURE_vulkan=OFF"
 
-    # Keep the font stack self-contained (bundled freetype, harfbuzz) so
-    # enabling GUI doesn't pull in a windowing-system worth of dependencies,
-    # but use the system libpng / libjpeg we already build.
+    # Keep the shaping/rendering stack self-contained (bundled freetype and
+    # harfbuzz), while using fontconfig for Linux system-font discovery and the
+    # system libpng / libjpeg we already build.
     "-DQT_FEATURE_system_freetype=OFF"
     "-DQT_FEATURE_system_harfbuzz=OFF"
     (qtFeature "system_libpng" (gui && libpng != null))
     (qtFeature "system_libjpeg" (gui && libjpeg != null))
-    "-DQT_FEATURE_fontconfig=OFF"
+    (qtFeature "fontconfig" fontconfigSupport)
 
     # ── Disable platform integrations ───────────────────────────────────
     # Disable windowing backends we don't need. Wayland is kept when

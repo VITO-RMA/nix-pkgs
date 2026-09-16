@@ -543,6 +543,7 @@
                   sqlite = final.pkg-mod-sqlite;
                   libpng = final.pkg-mod-libpng;
                   libjpeg = final.pkg-mod-libjpeg;
+                  fontconfig = if isLinuxGlibc then final.fontconfig else null;
                   libGL = guiLibGL;
                   # CUPS brings a shared desktop/image stack into static Linux
                   # builds; PrintSupport itself remains available without it.
