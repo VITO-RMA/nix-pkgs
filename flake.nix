@@ -544,7 +544,9 @@
                   libpng = final.pkg-mod-libpng;
                   libjpeg = final.pkg-mod-libjpeg;
                   libGL = guiLibGL;
-                  cups = final.cups;
+                  # CUPS brings a shared desktop/image stack into static Linux
+                  # builds; PrintSupport itself remains available without it.
+                  cups = null;
                 }
               );
 
