@@ -545,9 +545,12 @@
                   libjpeg = final.pkg-mod-libjpeg;
                   fontconfig = if isLinuxGlibc then final.fontconfig else null;
                   libGL = guiLibGL;
-                  # CUPS brings a shared desktop/image stack into static Linux
-                  # builds; PrintSupport itself remains available without it.
-                  cups = null;
+                  # Qt's Darwin PrintSupport target references Cups::Cups even
+                  # when CMake reports the CUPS feature as unavailable. The
+                  # Apple SDK no longer supplies the headers/stubs, so provide
+                  # nixpkgs' CUPS target on Darwin. Keep it out of static Linux
+                  # builds to avoid pulling in the shared desktop stack.
+                  cups = if host.isDarwin then final.cups else null;
                 }
               );
 
