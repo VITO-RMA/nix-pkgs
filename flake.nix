@@ -556,6 +556,19 @@
               cups = null;
             };
 
+            pkg-mod-qtsvg = final.callPackage ./pkgs/qtsvg.nix {
+              inherit static stdenv mkPackageName;
+              qtsvg = final.qt6.qtsvg;
+              qtbase = final.pkg-mod-qtbase;
+              qtbaseNative = final.buildPackages.qt6.qtbase;
+              zlib = final.pkg-mod-zlib-compat;
+              libxkbcommon =
+                if stdenv.hostPlatform.isLinux && !(stdenv.hostPlatform.isMusl or false) then
+                  final.libxkbcommon
+                else
+                  null;
+            };
+
             pkg-mod-qwt = final.callPackage ./pkgs/qwt.nix {
               inherit static stdenv mkPackageName;
               qtbase = final.pkg-mod-qtbase;
@@ -697,6 +710,7 @@
         "pkg-mod-pcraster-static"
         "pkg-mod-qtbase-headless-static"
         "pkg-mod-qtbase-static"
+        "pkg-mod-qtsvg-static"
         "pkg-mod-qwt-static"
       ];
 
@@ -711,6 +725,7 @@
         "pkg-mod-pcraster-win-static"
         "pkg-mod-qtbase-headless-win-static"
         "pkg-mod-qtbase-win-static"
+        "pkg-mod-qtsvg-win-static"
         "pkg-mod-qwt-win-static"
       ];
 
@@ -912,6 +927,7 @@
                 # variant (pkg-mod-qtbase-headless) is built there.
                 excludeNames = [
                   "pkg-mod-qtbase"
+                  "pkg-mod-qtsvg"
                   "pkg-mod-qwt"
                   "pkg-mod-maplibre-native"
                 ];
