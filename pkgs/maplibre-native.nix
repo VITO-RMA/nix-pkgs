@@ -7,6 +7,7 @@
   mkPackageName,
   sqlite,
   zlib,
+  icu,
   qtbase,
 }:
 
@@ -46,6 +47,7 @@ stdenv.mkDerivation rec {
     sqlite
     zlib
     qtbase
+    icu
   ];
 
   propagatedBuildInputs = buildInputs;
@@ -57,7 +59,7 @@ stdenv.mkDerivation rec {
     "-DMLN_WITH_QT=ON"
     "-DMLN_QT_LIBRARY_ONLY=ON"
     "-DMLN_QT_WITH_INTERNAL_SQLITE=ON" # this actually used the sqlite from buildInputs (just not the one from qtsql)
-    (lib.cmakeBool "MLN_QT_WITH_INTERNAL_ICU" stdenv.hostPlatform.isLinux)
+    "-DMLN_QT_WITH_INTERNAL_ICU=OFF"
     "-DMLN_QT_STATIC=ON"
     #(lib.cmakeBool "MLN_QT_STATIC" static)
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))

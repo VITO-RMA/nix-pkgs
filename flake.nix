@@ -426,6 +426,7 @@
               sqlite = final.pkg-mod-sqlite;
               zlib = final.pkg-mod-zlib-compat;
               qtbase = final.pkg-mod-qtbase;
+              icu = final.pkg-mod-icu;
             };
 
             pkg-mod-minizip = final.callPackage ./pkgs/minizip.nix {
@@ -543,7 +544,7 @@
                   libpng = final.pkg-mod-libpng;
                   libjpeg = final.pkg-mod-libjpeg;
                   libGL = guiLibGL;
-                  cups = null;
+                  cups = final.cups;
                 }
               );
 
