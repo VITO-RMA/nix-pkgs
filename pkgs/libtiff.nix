@@ -30,6 +30,12 @@
       ./patches/libtiff-static-targets.patch
     ];
 
+    postPatch = (old.postPatch or "") + ''
+      # On case-insensitive Darwin filesystems this shadows CMake's FindLibLZMA
+      # module, but defines liblzma::liblzma instead of LibLZMA::LibLZMA.
+      rm cmake/Findliblzma.cmake
+    '';
+
     outputs = builtins.filter (o: !(o == "doc" || o == "man" || o == "bin")) (old.outputs or [ "out" ]);
 
     cmakeFlags =
@@ -46,7 +52,7 @@
         "-Dzip=OFF"
         "-DCMAKE_DISABLE_FIND_PACKAGE_OpenGL=ON"
         "-DCMAKE_DISABLE_FIND_PACKAGE_GLUT=ON"
-        "-DCMAKE_REQUIRE_FIND_PACKAGE_liblzma=ON"
+        "-DCMAKE_REQUIRE_FIND_PACKAGE_LibLZMA=ON"
         "-DZSTD_HAVE_DECOMPRESS_STREAM=ON"
         "-DHAVE_JPEGTURBO_DUAL_MODE_8_12=OFF"
         "-DBUILD_DOC=OFF"
