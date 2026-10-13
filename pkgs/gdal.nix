@@ -31,6 +31,7 @@
   c-blosc,
   curl,
   cmake,
+  ninja,
   cryptopp,
   expat,
   freexl,
@@ -88,8 +89,11 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     bison
     cmake
+    ninja
     pkg-config
   ];
+
+  cmakeGenerator = "Ninja";
 
   cmakeFlags = [
     "-DGDAL_USE_INTERNAL_LIBS=OFF"
