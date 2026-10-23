@@ -8,6 +8,9 @@ add_subdirectory("${maplibre_source}" maplibre)
 
 set_target_properties(mbgl-core PROPERTIES EXPORT_NAME Core)
 target_compile_features(mbgl-core PUBLIC cxx_std_20)
+# Public backend headers also depend on headers in upstream's source tree
+# (for example, mln/gfx/offscreen_texture.hpp).
+target_include_directories(mbgl-core PUBLIC "$<BUILD_INTERFACE:${maplibre_source}/src>")
 find_package(Threads REQUIRED)
 target_link_libraries(mbgl-core PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
 if(MLN_WITH_WEBGPU)
