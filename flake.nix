@@ -425,18 +425,8 @@
               inherit static stdenv mkPackageName;
             };
 
-            pkg-mod-maplibre-native = final.callPackage ./pkgs/maplibre-native.nix {
-              inherit static stdenv mkPackageName;
-              curl = final.pkg-mod-curl;
-              libjpeg = final.pkg-mod-libjpeg;
-              libpng = final.pkg-mod-libpng;
-              icu = final.pkg-mod-icu;
-              zlib = final.pkg-mod-zlib-compat;
-            };
-
-            pkg-mod-maplibre-native-wgpu = final.pkg-mod-maplibre-native.override {
-              withWgpu = true;
-            };
+            # MapLibre Native core variants are temporarily disabled.
+            # The recipe remains in pkgs/maplibre-native.nix.
 
             pkg-mod-maplibregl-native = final.callPackage ./pkgs/maplibregl-native.nix {
               inherit static stdenv mkPackageName;
@@ -752,13 +742,6 @@
 
       isZigPackage = _name: package: package.stdenv.cc.isZig or false;
 
-      # CI uploads built outputs to Cachix. Keep the alternative native
-      # renderers available to consumers, but cache only the wgpu core variant.
-      cacheCheckExclusions = [
-        "pkg-mod-maplibre-native-static"
-        "pkg-mod-maplibre-native-musl-static"
-        "pkg-mod-maplibre-native-wgpu-musl-static"
-      ];
 
       mkZigCrossCheck =
         system: packages:
@@ -766,7 +749,7 @@
           pkgs = import nixpkgs { inherit system; };
           zigPackages = inputs.nixpkgs.lib.filterAttrs (
             name: package:
-            isZigPackage name package && !(builtins.elem name (zigCrossCheckExclusions ++ cacheCheckExclusions))
+            isZigPackage name package && !(builtins.elem name zigCrossCheckExclusions)
           ) packages;
           links = inputs.nixpkgs.lib.mapAttrsToList (name: path: { inherit name path; }) zigPackages;
         in
@@ -980,7 +963,7 @@
           # them as individual checks would also build the excluded Qt stack.
           nonZigPackages = inputs.nixpkgs.lib.filterAttrs (
             name: package:
-            !(isZigPackage name package) && !(builtins.elem name (qtCheckExclusions ++ cacheCheckExclusions))
+            !(isZigPackage name package) && !(builtins.elem name qtCheckExclusions)
           ) packages;
         in
         nonZigPackages

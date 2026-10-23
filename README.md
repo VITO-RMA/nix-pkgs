@@ -84,6 +84,8 @@ The MinGW variant targets 64-bit Windows, is cross-compiled from Linux, and uses
 
 ### MapLibre Native renderers
 
+MapLibre Native core variants are temporarily not registered in the overlay or flake package list, so CI does not build or upload them. The recipe remains in `pkgs/maplibre-native.nix`; the following describes the variants when re-enabled. Other packages' cache coverage is unchanged.
+
 `pkg-mod-maplibre-native` provides the C++ core with Vulkan on Linux and Metal on macOS.
 `pkg-mod-maplibre-native-wgpu` instead enables WebGPU using the bundled `wgpu-native`, built from source as a static archive. It includes the default platform services required by desktop bindings: the run loop, headless frontend, file sources, and the platform's Unicode/SQLite support. Both install the `MapLibreNative::Core` CMake target.
 
@@ -93,7 +95,7 @@ Rust applications that provide WebGPU through their own FFI implementation can u
 
 Platform-enabled native builds include an install check that compiles and links a consumer of the installed CMake package. The FFI variant needs its embedding application's link/render tests instead.
 
-For example, build the static glibc WebGPU variant with:
+Once re-enabled, build the static glibc WebGPU variant with:
 
 ```console
 nix build .#pkg-mod-maplibre-native-wgpu-static
@@ -101,7 +103,6 @@ nix build .#pkg-mod-maplibre-native-wgpu-static
 
 The Linux musl variant is `pkg-mod-maplibre-native-wgpu-musl-static`. The default overlay also exposes `pkgs.pkg-mod-maplibre-native-wgpu` for native builds. MinGW is not supported by these packages.
 
-CI builds and uploads only the non-musl wgpu core variants to Cachix; the Vulkan/Metal core variants and all musl core variants remain available for local builds. Other packages' cache coverage is unchanged.
 
 ### Build modes
 
