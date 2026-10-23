@@ -421,6 +421,10 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-maplibre-native = final.callPackage ./pkgs/maplibre-native.nix {
+              inherit static stdenv mkPackageName;
+            };
+
             pkg-mod-maplibregl-native = final.callPackage ./pkgs/maplibregl-native.nix {
               inherit static stdenv mkPackageName;
               sqlite = final.pkg-mod-sqlite;
