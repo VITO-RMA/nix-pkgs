@@ -13,12 +13,12 @@
 }:
 
 let
-  version = "13.7.1";
+  version = "13.6.0";
   src = fetchgit {
     url = "https://github.com/maplibre/maplibre-native.git";
-    # android-v13.7.1, the latest upstream release of the shared C++ core.
-    rev = "4cf121e515d8d065b57cd555a0b231ea27ff0e5d";
-    hash = "sha256-WqublcOZ+kYqyUer2ktwSmfjISciZZCISJqAGd/wIp8=";
+    # android-v13.6.0 release of the shared C++ core.
+    rev = "2919f71e394876ecca220a7a620000e337b318f2";
+    hash = "sha256-84wCG5BP3ijS3Q46d+zJ6mi5VuFWoAgQDir3wEfJP68=";
     fetchSubmodules = true;
   };
   wgpuNative = rustPlatform.buildRustPackage {
