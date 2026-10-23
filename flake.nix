@@ -421,7 +421,7 @@
               inherit static stdenv mkPackageName;
             };
 
-            pkg-mod-maplibre-native = final.callPackage ./pkgs/maplibre-native.nix {
+            pkg-mod-maplibregl-native = final.callPackage ./pkgs/maplibregl-native.nix {
               inherit static stdenv mkPackageName;
               sqlite = final.pkg-mod-sqlite;
               zlib = final.pkg-mod-zlib-compat;
@@ -709,7 +709,7 @@
           );
 
       zigCrossCheckExclusions = [
-        "pkg-mod-maplibre-native-static"
+        "pkg-mod-maplibregl-native-static"
         "pkg-mod-netcdf-fortran-static"
         "pkg-mod-pcraster-static"
         "pkg-mod-qtbase-headless-static"
@@ -725,7 +725,7 @@
         "pkg-mod-qtbase-headless-musl-static"
 
         # MinGW
-        "pkg-mod-maplibre-native-win-static"
+        "pkg-mod-maplibregl-native-win-static"
         "pkg-mod-pcraster-win-static"
         "pkg-mod-qtbase-headless-win-static"
         "pkg-mod-qtbase-win-static"
@@ -933,7 +933,7 @@
                   "pkg-mod-qtbase"
                   "pkg-mod-qtsvg"
                   "pkg-mod-qwt"
-                  "pkg-mod-maplibre-native"
+                  "pkg-mod-maplibregl-native"
                 ];
               };
 
