@@ -10,7 +10,11 @@ set_target_properties(mbgl-core PROPERTIES EXPORT_NAME Core)
 target_compile_features(mbgl-core PUBLIC cxx_std_20)
 find_package(Threads REQUIRED)
 target_link_libraries(mbgl-core PUBLIC Threads::Threads ${CMAKE_DL_LIBS})
-if(APPLE)
+if(MLN_WITH_WEBGPU)
+    # Public backend headers include WebGPU headers and the generated C++ shim.
+    target_link_libraries(mbgl-core PUBLIC mbgl-vendor-wgpu)
+endif()
+if(MLN_WITH_METAL)
     target_link_libraries(mbgl-core PUBLIC mbgl-vendor-metal-cpp
         "-framework Foundation" "-framework QuartzCore")
 endif()

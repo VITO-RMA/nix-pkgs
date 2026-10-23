@@ -425,6 +425,10 @@
               inherit static stdenv mkPackageName;
             };
 
+            pkg-mod-maplibre-native-wgpu = final.pkg-mod-maplibre-native.override {
+              withWgpu = true;
+            };
+
             pkg-mod-maplibregl-native = final.callPackage ./pkgs/maplibregl-native.nix {
               inherit static stdenv mkPackageName;
               sqlite = final.pkg-mod-sqlite;
@@ -739,12 +743,21 @@
 
       isZigPackage = _name: package: package.stdenv.cc.isZig or false;
 
+      # CI uploads built outputs to Cachix. Keep the alternative native
+      # renderers available to consumers, but cache only the wgpu core variant.
+      cacheCheckExclusions = [
+        "pkg-mod-maplibre-native-static"
+        "pkg-mod-maplibre-native-musl-static"
+        "pkg-mod-maplibre-native-wgpu-musl-static"
+      ];
+
       mkZigCrossCheck =
         system: packages:
         let
           pkgs = import nixpkgs { inherit system; };
           zigPackages = inputs.nixpkgs.lib.filterAttrs (
-            name: package: isZigPackage name package && !(builtins.elem name zigCrossCheckExclusions)
+            name: package:
+            isZigPackage name package && !(builtins.elem name (zigCrossCheckExclusions ++ cacheCheckExclusions))
           ) packages;
           links = inputs.nixpkgs.lib.mapAttrsToList (name: path: { inherit name path; }) zigPackages;
         in
@@ -957,7 +970,8 @@
           # Zig packages are covered by the aggregate check below. Keeping
           # them as individual checks would also build the excluded Qt stack.
           nonZigPackages = inputs.nixpkgs.lib.filterAttrs (
-            name: package: !(isZigPackage name package) && !(builtins.elem name qtCheckExclusions)
+            name: package:
+            !(isZigPackage name package) && !(builtins.elem name (qtCheckExclusions ++ cacheCheckExclusions))
           ) packages;
         in
         nonZigPackages

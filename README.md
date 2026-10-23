@@ -70,7 +70,7 @@ The final application and all of its dependencies must be built with the matchin
 
 The musl variant uses static libraries and static musl linkage. When the application and all of its dependencies use this variant, the resulting executable should not require a runtime libc or dynamic loader from the target distribution.
 
-This variant is Linux-only. GUI Qt, Qwt, and MapLibre Native are currently omitted; the headless Qt variant remains available.
+This variant is Linux-only. GUI Qt, Qwt, and Qt-based MapLibre GL Native are currently omitted; the headless Qt variant remains available.
 
 ### 4. MinGW
 
@@ -81,6 +81,23 @@ It contains Windows libraries and, where a recipe enables tools, Windows executa
 The MinGW variant targets 64-bit Windows, is cross-compiled from Linux, and uses GCC by default.
 
 ## Current implementation status
+
+### MapLibre Native renderers
+
+`pkg-mod-maplibre-native` provides the C++ core with Vulkan on Linux and Metal on macOS.
+`pkg-mod-maplibre-native-wgpu` instead enables WebGPU using the bundled `wgpu-native`, built from source as a static archive. Both install the `MapLibreNative::Core` CMake target and leave platform services to the embedding application.
+
+For example, build the static glibc WebGPU variant with:
+
+```console
+nix build .#pkg-mod-maplibre-native-wgpu-static
+```
+
+The Linux musl variant is `pkg-mod-maplibre-native-wgpu-musl-static`. The default overlay also exposes `pkgs.pkg-mod-maplibre-native-wgpu` for native builds. MinGW is not supported by these core packages.
+
+CI builds and uploads only the non-musl wgpu core variants to Cachix; the Vulkan/Metal core variants and all musl core variants remain available for local builds. Other packages' cache coverage is unchanged.
+
+### Build modes
 
 The build definitions currently implement and export all four modes described above. Representative `fmt` outputs have the expected forms:
 
