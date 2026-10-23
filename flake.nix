@@ -393,6 +393,10 @@
               zstd = final.pkg-mod-zstd;
             };
 
+            pkg-mod-libwebp = final.callPackage ./pkgs/libwebp.nix {
+              inherit static stdenv mkPackageName;
+            };
+
             pkg-mod-libxlsxwriter = final.callPackage ./pkgs/libxlsxwriter.nix {
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
