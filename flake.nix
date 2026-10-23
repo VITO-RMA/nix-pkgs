@@ -423,6 +423,11 @@
 
             pkg-mod-maplibre-native = final.callPackage ./pkgs/maplibre-native.nix {
               inherit static stdenv mkPackageName;
+              curl = final.pkg-mod-curl;
+              libjpeg = final.pkg-mod-libjpeg;
+              libpng = final.pkg-mod-libpng;
+              icu = final.pkg-mod-icu;
+              zlib = final.pkg-mod-zlib-compat;
             };
 
             pkg-mod-maplibre-native-wgpu = final.pkg-mod-maplibre-native.override {
