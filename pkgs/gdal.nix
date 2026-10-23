@@ -129,6 +129,8 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "GDAL_ENABLE_DRIVER_GRIB" useGrib)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLSX" useExpat)
     (lib.cmakeBool "OGR_ENABLE_DRIVER_XLS" useFreexl)
+    (lib.cmakeBool "OGR_ENABLE_DRIVER_MVT" (!useMinimalFeatures))
+    (lib.cmakeBool "OGR_ENABLE_DRIVER_PMTILES" (!useMinimalFeatures))
     (lib.cmakeBool "GDAL_USE_SQLITE3" useSqlite)
     (lib.cmakeBool "GDAL_USE_PCRE2" useSqlite) # pcre2 is only needed for the sqlite driver
     (lib.cmakeBool "OGR_ENABLE_DRIVER_GPKG" useSqlite)
