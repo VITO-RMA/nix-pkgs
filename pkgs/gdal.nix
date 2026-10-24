@@ -97,6 +97,8 @@ stdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags = [
     "-DGDAL_USE_INTERNAL_LIBS=OFF"
+    "-DEMBED_RESOURCE_FILES=ON"
+    "-DUSE_ONLY_EMBEDDED_RESOURCE_FILES=ON"
     "-DGEOTIFF_INCLUDE_DIR=${lib.getDev libgeotiff}/include"
     "-DGEOTIFF_LIBRARY_RELEASE=${lib.getLib libgeotiff}/lib/libgeotiff${ext}"
     "-DBUILD_DOCS=OFF"
