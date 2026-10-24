@@ -121,6 +121,7 @@ stdenv.mkDerivation (finalAttrs: {
     "-DOGR_ENABLE_DRIVER_CSV=ON"
 
     (lib.cmakeBool "GDAL_USE_CURL" useCurl)
+    (lib.cmakeBool "CURL_USE_STATIC_LIBS" static)
     (lib.cmakeBool "GDAL_USE_BLOSC" useCBlosc)
     (lib.cmakeBool "GDAL_USE_CRYPTOPP" useCryptopp)
     (lib.cmakeBool "GDAL_USE_LIBXML2" useLibXml2)
