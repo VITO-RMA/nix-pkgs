@@ -85,6 +85,8 @@
     ]
     ++ lib.optionals stdenv.hostPlatform.isWindows [
       "-DENABLE_UNICODE=ON"
+      # Let OpenSSL load Windows certificate stores without a bundled CA file.
+      "-DCURL_CA_NATIVE=ON"
     ];
 
     # Ensure CMake pkg-config calls resolve static deps in cross builds.
