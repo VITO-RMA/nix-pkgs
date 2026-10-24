@@ -68,6 +68,13 @@
       "-DCURL_USE_PKGCONFIG=ON"
       (lib.cmakeBool "BUILD_SHARED_LIBS" (!static))
     ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      # Let OpenSSL load host trust paths and honor SSL_CERT_FILE / SSL_CERT_DIR.
+      # Compiled-in curl CA paths would bypass this fallback.
+      "-DCURL_CA_BUNDLE=none"
+      "-DCURL_CA_PATH=none"
+      "-DCURL_CA_FALLBACK=ON"
+    ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       # Use the deployment Mac's trust store, so the system's ca certificates are used.
       "-DUSE_APPLE_SECTRUST=ON"
