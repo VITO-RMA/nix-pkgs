@@ -393,6 +393,10 @@
               zstd = final.pkg-mod-zstd;
             };
 
+            pkg-mod-libuv = final.callPackage ./pkgs/libuv.nix {
+              inherit static stdenv mkPackageName;
+            };
+
             pkg-mod-libwebp = final.callPackage ./pkgs/libwebp.nix {
               inherit static stdenv mkPackageName;
             };
@@ -742,14 +746,12 @@
 
       isZigPackage = _name: package: package.stdenv.cc.isZig or false;
 
-
       mkZigCrossCheck =
         system: packages:
         let
           pkgs = import nixpkgs { inherit system; };
           zigPackages = inputs.nixpkgs.lib.filterAttrs (
-            name: package:
-            isZigPackage name package && !(builtins.elem name zigCrossCheckExclusions)
+            name: package: isZigPackage name package && !(builtins.elem name zigCrossCheckExclusions)
           ) packages;
           links = inputs.nixpkgs.lib.mapAttrsToList (name: path: { inherit name path; }) zigPackages;
         in
@@ -962,8 +964,7 @@
           # Zig packages are covered by the aggregate check below. Keeping
           # them as individual checks would also build the excluded Qt stack.
           nonZigPackages = inputs.nixpkgs.lib.filterAttrs (
-            name: package:
-            !(isZigPackage name package) && !(builtins.elem name qtCheckExclusions)
+            name: package: !(isZigPackage name package) && !(builtins.elem name qtCheckExclusions)
           ) packages;
         in
         nonZigPackages
