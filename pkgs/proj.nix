@@ -27,7 +27,9 @@ stdenv.mkDerivation (finalAttrs: {
     ./patches/proj-libtiff.patch
     ./patches/proj-mingw-deps.patch
   ]
-  ++ lib.optionals (stdenv.cc.isZig or false) [ ./patches/proj-zig-runtime-libs.patch ];
+  ++ lib.optionals (stdenv.hostPlatform.isMinGW || (stdenv.cc.isZig or false)) [
+    ./patches/proj-pkgconfig.patch
+  ];
 
   outputs = [
     "out"
@@ -72,6 +74,23 @@ stdenv.mkDerivation (finalAttrs: {
     '';
 
   doCheck = false;
+
+  # Cross builds skip installCheckPhase. Only link this C consumer here;
+  # pkg-config must supply the C++ runtime, and no Windows binary is run.
+  postInstall = lib.optionalString stdenv.hostPlatform.isMinGW ''
+    export PKG_CONFIG_PATH="$out/lib/pkgconfig:$PKG_CONFIG_PATH"
+    cat > pkgconfig-check.c <<'EOF'
+    #include <proj.h>
+    int main(void) {
+        PJ_CONTEXT *ctx = proj_context_create();
+        PJ *crs = proj_create(ctx, "EPSG:4326");
+        proj_destroy(crs);
+        proj_context_destroy(ctx);
+        return 0;
+    }
+    EOF
+    $CC pkgconfig-check.c -o pkgconfig-check.exe $($PKG_CONFIG --cflags --libs --static proj)
+  '';
 
   passthru = {
     inherit sqlite;
