@@ -79,7 +79,7 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-sD/ZAOvMWK2+AGw6wgziDsheH+hwUwhd7i2f65cjFKg=";
   };
 
-  patches = [ ];
+  patches = lib.optionals (stdenv.cc.isZig or false) [ ./patches/gdal-zig-runtime-libs.patch ];
 
   postPatch = lib.optionalString static ''
     # Make gdal use freexl's installed config (FreeXLConfig.cmake)

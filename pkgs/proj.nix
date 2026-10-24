@@ -26,7 +26,8 @@ stdenv.mkDerivation (finalAttrs: {
   patches = [
     ./patches/proj-libtiff.patch
     ./patches/proj-mingw-deps.patch
-  ];
+  ]
+  ++ lib.optionals (stdenv.cc.isZig or false) [ ./patches/proj-zig-runtime-libs.patch ];
 
   outputs = [
     "out"

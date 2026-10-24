@@ -1,0 +1,17 @@
+diff --git a/cmake/ProjUtilities.cmake b/cmake/ProjUtilities.cmake
+--- a/cmake/ProjUtilities.cmake
++++ b/cmake/ProjUtilities.cmake
+@@ -79,6 +79,13 @@ function(configure_proj_pc)
+     set(cxx_libs "${CMAKE_CXX_IMPLICIT_LINK_LIBRARIES}")
+     list(REMOVE_ITEM cxx_libs ${CMAKE_C_IMPLICIT_LINK_LIBRARIES} nonempty)
+     foreach(lib IN LISTS cxx_libs)
++      # Zig builds its implicit runtimes in a temporary cache. Consumers must
++      # ask their matching compiler driver for these runtimes, not reuse ours.
++      if(IS_ABSOLUTE "${lib}" AND lib MATCHES "/zig-cache/")
++        get_filename_component(lib "${lib}" NAME_WE)
++        string(REGEX REPLACE "^lib" "" lib "${lib}")
++      endif()
++
+       list(APPEND EXTRA_LIBS "-l${lib}")
+     endforeach()
+   endif()

@@ -1,0 +1,18 @@
+diff --git a/cmake/helpers/GdalGenerateConfig.cmake b/cmake/helpers/GdalGenerateConfig.cmake
+--- a/cmake/helpers/GdalGenerateConfig.cmake
++++ b/cmake/helpers/GdalGenerateConfig.cmake
+@@ -210,7 +210,13 @@ function(gdal_split_library_to_lflags _lib_flag _path_flag _input)
+             string(LENGTH "${_prefix}" _pos)
+             string(SUBSTRING "${_name_we}" "${_pos}" "-1" _lib_name)
+             set(${_lib_flag} "${CMAKE_LINK_LIBRARY_FLAG}${_lib_name}" PARENT_SCOPE)
+-            if(_lib_dir AND NOT _lib_dir IN_LIST CMAKE_C_IMPLICIT_LINK_DIRECTORIES)
++            # Zig's compiler owns its runtime archives and target libc. Keep
++            # their -l flags, but let the consumer's matching driver resolve
++            # them instead of exporting our temporary cache or host glibc.
++            if(_lib_dir
++               AND NOT _lib_dir IN_LIST CMAKE_C_IMPLICIT_LINK_DIRECTORIES
++               AND NOT _lib_dir MATCHES "/zig-cache/"
++               AND NOT _lib_dir MATCHES "^/nix/store/[a-z0-9]+-glibc[^/]*/lib(64)?$")
+                 set(${_path_flag} "${CMAKE_LIBRARY_PATH_FLAG}${_lib_dir}" PARENT_SCOPE)
+             else()
+                 set(${_path_flag} "" PARENT_SCOPE)
