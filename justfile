@@ -25,3 +25,19 @@ cache: test
     echo "Pushing ${#installables[@]} packages for ${system} to cachix geo-overlay…"
     nix build --no-link --print-out-paths "${installables[@]}" \
       | cachix push geo-overlay
+
+# Push the same check/package closures to Cloudsmith using native Nix tooling.
+# Configure Nix's netrc-file setting if the repository requires authentication.
+cache-cloudsmith: test
+    #!/usr/bin/env bash
+    set -euo pipefail
+    system="$(nix eval --raw --impure --expr builtins.currentSystem)"
+    attrs="$(nix eval ".#checks.${system}" --apply builtins.attrNames --json | jq -r '.[]')"
+    installables=()
+    for attr in $attrs; do
+        installables+=(".#checks.${system}.${attr}")
+    done
+    echo "Pushing ${#installables[@]} packages for ${system} to Cloudsmith sas/geo-overlay…"
+    paths="$(nix build --no-link --print-out-paths "${installables[@]}")"
+    printf '%s\n' "$paths" \
+      | xargs -r nix copy --to https://nix.cloudsmith.io/sas/geo-overlay --no-check-sigs
