@@ -21,6 +21,15 @@ libuv.overrideAttrs (old: {
   # UTF-16 conversion helper still needs a mutable output pointer.
   postPatch =
     (old.postPatch or "")
+    + ''
+      # Nix passes absolute install directories; prepending the prefix again
+      # produces invalid library and include paths in both pkg-config files.
+      substituteInPlace CMakeLists.txt \
+        --replace-fail 'set(libdir ''${CMAKE_INSTALL_PREFIX}/''${CMAKE_INSTALL_LIBDIR})' \
+          'set(libdir ''${CMAKE_INSTALL_FULL_LIBDIR})' \
+        --replace-fail 'set(includedir ''${CMAKE_INSTALL_PREFIX}/''${CMAKE_INSTALL_INCLUDEDIR})' \
+          'set(includedir ''${CMAKE_INSTALL_FULL_INCLUDEDIR})'
+    ''
     + lib.optionalString stdenv.hostPlatform.isMinGW ''
       substituteInPlace src/win/util.c \
         --replace-fail '    WCHAR cpu_brand[256];' '    char* model = NULL;
