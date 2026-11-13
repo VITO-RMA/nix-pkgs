@@ -323,7 +323,7 @@
             pkg-mod-hdf5 = final.callPackage ./pkgs/hdf5.nix {
               inherit static stdenv mkPackageName;
               zlib = final.pkg-mod-zlib-compat;
-              fortran = final.fortran;
+              fortran = final.gfortran;
               szip = final.szip;
               mpi = final.mpi;
             };
